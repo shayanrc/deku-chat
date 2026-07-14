@@ -85,7 +85,6 @@ export function ApiKeysModal() {
         </div>
         <div className="modal-sub">
           Keys are stored only in this browser (localStorage) and sent with each request — the server never saves them.
-          A key set here overrides the server's <code>.env</code> for that provider.
         </div>
 
         <div className="tiny-label" style={{ marginBottom: 8 }}>Model providers</div>

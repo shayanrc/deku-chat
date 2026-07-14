@@ -65,8 +65,7 @@ keeps the originals behind a "Show original" toggle — nothing is destroyed. Al
 Click (or right-click) the avatar → **API keys…**. One row per supported provider — Anthropic,
 OpenAI, Google, Mistral, Groq, Cohere, xAI, DeepSeek — plus tool keys like Tavily web search.
 Keys live in your browser's localStorage only and are sent per-request; the server never stores
-them. Saved keys show masked with a "browser" source tag, and a key set here overrides the
-server's `.env` fallback for that provider.
+them. Saved keys show masked with a "browser" source tag.
 
 ## Stack
 
@@ -99,9 +98,9 @@ Production: `npm run build && npm start` (serves the built app on :5175).
 
 Two ways to provide keys, in priority order:
 
-1. **In the app (recommended)** — right-click the avatar in the top right → **API keys…**.
+1. **In the app (recommended)** — click the avatar in the top right → **API keys…**.
    Keys are stored in your **browser's localStorage only**, sent with each request, and never
-   persisted by the server. A key set here overrides the server's `.env` for that provider.
+   persisted by the server.
 2. **Server `.env` fallback** — `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`,
    `MISTRAL_API_KEY`, `GROQ_API_KEY`, `COHERE_API_KEY`, `XAI_API_KEY`, `DEEPSEEK_API_KEY`,
    plus optional `TAVILY_API_KEY` (enables the "Web search" tool) and `PORT` (default 5175).
