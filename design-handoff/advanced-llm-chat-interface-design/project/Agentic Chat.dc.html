@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="stylesheet" href="styles/industry.css">
+<link rel="stylesheet" href="styles/nocturne.css">
+<style>
+  html,body{margin:0;padding:0;height:100%;background:#0b0c12;}
+  *{box-sizing:border-box;}
+  summary{list-style:none;cursor:pointer;}
+  summary::-webkit-details-marker{display:none;}
+  details.pop{position:relative;}
+  details.pop > .pop-panel{position:absolute;z-index:40;}
+  .mrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border-radius:var(--radius-sm);font-size:14px;cursor:pointer;}
+  .mrow:hover{background:color-mix(in srgb,var(--color-accent) 10%,transparent);}
+  .mrow.on{background:color-mix(in srgb,var(--color-accent) 15%,transparent);}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.02em;padding:3px 10px;border-radius:calc(var(--radius-md) * .75);background:color-mix(in srgb,var(--color-accent) 14%,transparent);color:var(--color-accent);border:1px solid color-mix(in srgb,var(--color-accent) 28%,transparent);}
+  .seg{display:inline-flex;border:1px solid var(--color-divider);border-radius:var(--radius-md);overflow:hidden;}
+  .seg button{border:none;background:transparent;color:var(--color-neutral-500);padding:6px 10px;cursor:pointer;display:grid;place-items:center;}
+  .seg button.on{background:color-mix(in srgb,var(--color-accent) 18%,transparent);color:var(--color-accent);}
+  .row-anim{overflow:hidden;transition:max-height .7s ease,opacity .5s ease,transform .5s ease,padding .5s ease,margin .5s ease;max-height:120px;}
+  .row-drop{max-height:0 !important;opacity:0;transform:translateY(-10px);padding-top:0 !important;padding-bottom:0 !important;margin:0 !important;border-width:0 !important;}
+  .commit{position:absolute;width:20px;height:20px;border-radius:50%;transition:left .75s cubic-bezier(.4,0,.2,1),top .75s cubic-bezier(.4,0,.2,1),box-shadow .4s,transform .4s;}
+  .fadeable{transition:opacity .6s ease;}
+  .pulse{box-shadow:0 0 0 6px color-mix(in srgb,var(--color-accent) 30%,transparent);}
+  .modal-in{animation:mIn .25s ease both;}
+  @keyframes mIn{from{opacity:0;transform:translateY(14px) scale(.98);}}
+  .toast{animation:tIn .3s ease both;}
+  @keyframes tIn{from{opacity:0;transform:translateY(12px);}}
+  .fade-in{animation:fIn .5s ease both;}
+  @keyframes fIn{from{opacity:0;transform:translateY(8px);}}
+  .btn-plain{font:inherit;border:none;background:transparent;color:inherit;cursor:pointer;padding:0;text-align:left;width:100%;}
+</style>
+</helmet>
+
+<div class="app {{ scopeClass }}" style="height:100vh;display:flex;flex-direction:column;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);overflow:hidden;">
+
+  <!-- ═══ TOP BAR ═══ -->
+  <div style="display:flex;align-items:center;gap:var(--space-3);height:56px;padding:0 var(--space-4);border-bottom:1px solid var(--color-divider);flex:none;">
+    <div style="font-size:18px;font-weight:600;letter-spacing:-.01em;margin-right:var(--space-2);">Deku</div>
+    <details class="pop">
+      <summary style="display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid var(--color-divider);border-radius:var(--radius-md);font-size:13px;">
+        <span style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-500);">Provider</span>Anthropic
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-neutral-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </summary>
+      <div class="pop-panel" style="top:calc(100% + 6px);left:0;width:200px;background:var(--color-surface);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);padding:var(--space-2);">
+        <div class="mrow on"><span>Anthropic</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <div class="mrow">OpenAI</div><div class="mrow">Google</div>
+      </div>
+    </details>
+    <details class="pop">
+      <summary style="display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid var(--color-divider);border-radius:var(--radius-md);font-size:13px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--color-accent);display:inline-block;"></span>Claude Sonnet 4.5
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-neutral-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </summary>
+      <div class="pop-panel" style="top:calc(100% + 6px);left:0;width:240px;background:var(--color-surface);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);padding:var(--space-2);">
+        <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-500);padding:4px 8px;">Anthropic models</div>
+        <div class="mrow on"><span>Claude Sonnet 4.5</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <div class="mrow">Claude Opus 4.1</div><div class="mrow">Claude Haiku 4</div>
+      </div>
+    </details>
+    <div style="flex:1;"></div>
+    <button class="btn btn-secondary" onClick="{{ openTree }}" title="See the whole conversation tree"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M5 8.5v3a3 3 0 0 0 3 3h1.5M19 8.5v3a3 3 0 0 1-3 3h-1.5M12 14.5v1"/></svg>Tree</button>
+    <div class="seg">
+      <button class="{{ lightOn }}" onClick="{{ setLight }}" title="Light mode"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="{{ darkOn }}" onClick="{{ setDark }}" title="Dark mode"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+    </div>
+    <details class="pop">
+      <summary style="display:inline-flex;align-items:center;gap:9px;padding:7px 11px;border:1px solid var(--color-divider);border-radius:var(--radius-md);font-size:12px;">
+        <span style="color:var(--color-neutral-500);">Context</span>
+        <span style="width:64px;height:6px;background:color-mix(in srgb,var(--color-text) 12%,transparent);border-radius:3px;position:relative;display:inline-block;overflow:hidden;"><span style="position:absolute;inset:0;width:48%;background:var(--color-accent);"></span></span><b>48%</b>
+      </summary>
+      <div class="pop-panel" style="top:calc(100% + 6px);right:0;width:300px;background:var(--color-surface);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);padding:var(--space-4);">
+        <div style="font-size:16px;margin-bottom:var(--space-3);">What's using the context</div>
+        <div style="display:flex;flex-direction:column;gap:9px;font-size:13px;">
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--color-neutral-500);">System &amp; instructions</span><b>6k</b></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--color-neutral-500);">Tools &amp; skills</span><b>9k</b></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--color-neutral-500);">Conversation</span><b>78k</b></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--color-neutral-500);">Summaries</span><b>4k</b></div>
+        </div>
+        <hr class="hr" style="margin:var(--space-3) 0;">
+        <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:var(--space-3);"><b>97k of 200k used</b><span style="color:var(--color-neutral-500);">103k left</span></div>
+        <button class="btn btn-primary btn-block" onClick="{{ openSummarize }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg>Compact conversation</button>
+      </div>
+    </details>
+    <div style="width:32px;height:32px;border-radius:50%;background:var(--color-accent-800);display:grid;place-items:center;font-size:12px;color:var(--color-accent-200);">MK</div>
+  </div>
+
+  <div style="display:flex;flex:1;min-height:0;">
+    <!-- ═══ SIDEBAR ═══ -->
+    <sc-if value="{{ sidebarOpen }}" hint-placeholder-val="{{ true }}">
+      <aside style="width:270px;flex:none;border-right:1px solid var(--color-divider);display:flex;flex-direction:column;padding:var(--space-4);gap:var(--space-4);overflow:auto;">
+        <button class="btn btn-primary btn-block" style="margin-top:0;justify-content:flex-start;gap:8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New chat</button>
+        <div>
+          <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-neutral-500);padding:0 4px var(--space-2);">Recent</div>
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <div style="display:flex;align-items:center;gap:8px;padding:8px;background:color-mix(in srgb,var(--color-accent) 15%,transparent);border-radius:var(--radius-sm);box-shadow:inset 2px 0 0 var(--color-accent);font-size:13px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              <span style="flex:1;">Q3 campaign messaging</span>
+              <span style="font-size:10px;color:var(--color-accent);">{{ branchCount }}</span>
+            </div>
+            <div style="margin-left:6px;border-left:1px solid var(--color-divider);padding:4px 0 4px 14px;display:flex;flex-direction:column;gap:2px;font-size:13px;">
+              <sc-for list="{{ branches }}" as="b" hint-placeholder-count="3">
+                <button class="btn-plain" onClick="{{ b.onSwitch }}" style="display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:var(--radius-sm);background:{{ b.bg }};box-shadow:{{ b.rail }};color:{{ b.fg }};">
+                  <span style="width:9px;height:9px;border-radius:50%;background:{{ b.dot }};border:{{ b.dotBorder }};flex:none;"></span>
+                  <span style="flex:1;">{{ b.name }}</span>
+                  <span style="font-size:10px;color:var(--color-neutral-500);">{{ b.meta }}</span>
+                </button>
+              </sc-for>
+              <button class="btn-plain" onClick="{{ openCombine }}" style="margin-top:6px;padding:8px 10px;border:1px dashed var(--color-divider);border-radius:var(--radius-md);font-size:11px;color:var(--color-neutral-500);line-height:1.4;">Drag a branch onto another — or click here — to <b style="color:var(--color-accent);font-weight:600;">combine</b> them.</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:8px;font-size:13px;color:var(--color-neutral-500);"><span style="width:14px;flex:none;"></span><span>Onboarding email flow</span></div>
+            <div style="display:flex;align-items:center;gap:8px;padding:8px;font-size:13px;color:var(--color-neutral-500);"><span style="width:14px;flex:none;"></span><span>Competitor teardown</span></div>
+          </div>
+        </div>
+      </aside>
+    </sc-if>
+
+    <!-- ═══ MAIN ═══ -->
+    <main style="flex:1;display:flex;flex-direction:column;min-width:0;">
+      <div style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-divider);flex:none;">
+        <button class="btn btn-icon" onClick="{{ toggleSidebar }}" title="Show / hide sidebar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg></button>
+        <div style="min-width:0;">
+          <div style="font-size:17px;line-height:1.1;">Q3 campaign messaging</div>
+          <div style="font-size:11px;color:var(--color-neutral-500);display:flex;align-items:center;gap:6px;margin-top:2px;"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-accent);"></span>On branch “{{ activeName }}”</div>
+        </div>
+        <div style="flex:1;"></div>
+        <button class="btn btn-secondary" title="Explore a new direction without losing this one"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(180 12 12)"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></g></svg>Branch</button>
+        <button class="btn btn-secondary" onClick="{{ openRewind }}" title="Go back to an earlier point and start fresh from there"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-7.3L3 8"/><path d="M3 3v5h5"/></svg>Rewind</button>
+        <button class="btn btn-secondary" onClick="{{ openCombine }}" title="Merge this branch's ideas into another"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(180 12 12)"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></g></svg>Combine</button>
+        <button class="btn btn-secondary" onClick="{{ openSummarize }}" title="Compress a stretch of messages to save space"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg>Summarize</button>
+      </div>
+
+      <div style="flex:1;overflow:auto;padding:var(--space-6) var(--space-8);display:flex;flex-direction:column;gap:var(--space-6);">
+        <div style="padding:var(--space-3) var(--space-4);display:flex;align-items:flex-start;gap:var(--space-3);background:var(--color-surface);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg>
+          <div style="flex:1;"><div style="font-size:14px;">Summarized 3 earlier messages</div><div style="font-size:12px;color:var(--color-neutral-500);margin-top:2px;">Brainstormed names → shortlisted “Current”. Freed ~6k tokens.</div></div>
+          <button class="btn btn-ghost" style="font-size:12px;">Show original</button>
+        </div>
+
+        <sc-if value="{{ extraSummary }}" hint-placeholder-val="{{ false }}">
+          <div class="fade-in" style="padding:var(--space-3) var(--space-4);display:flex;align-items:flex-start;gap:var(--space-3);background:var(--color-surface);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);border:1px solid color-mix(in srgb,var(--color-accent) 30%,transparent);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none;"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg>
+            <div style="flex:1;"><div style="font-size:14px;">{{ extraSummaryText }}</div><div style="font-size:12px;color:var(--color-neutral-500);margin-top:2px;">Just compacted by you. Freed ~{{ extraSummaryFreed }} of context.</div></div>
+            <button class="btn btn-ghost" style="font-size:12px;">Show original</button>
+          </div>
+        </sc-if>
+
+        <div style="align-self:flex-start;max-width:84%;font-size:14px;line-height:1.6;color:var(--color-neutral-700);">“Current” feels modern and energetic; “Tide” is calmer and more natural.</div>
+        <div style="align-self:flex-end;max-width:76%;"><div style="background:var(--color-accent-800);color:var(--color-accent-100);padding:var(--space-3) var(--space-4);border-radius:var(--radius-lg);font-size:14px;line-height:1.5;">Go with Current. Draft a few taglines.</div></div>
+        <div style="align-self:flex-start;max-width:84%;font-size:14px;line-height:1.6;">Three to start: “Stay Current.” · “The future, bottled.” · “Fresh thinking, in every sip.”</div>
+
+        <div style="display:flex;align-items:center;gap:10px;color:var(--color-accent);">
+          <div style="flex:1;height:1px;background:linear-gradient(to right,transparent,var(--color-divider));"></div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(180 12 12)"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></g></svg>
+          <span style="font-size:11px;letter-spacing:.04em;">Branched here → Playful tone · Formal tone</span>
+          <div style="flex:1;height:1px;background:linear-gradient(to left,transparent,var(--color-divider));"></div>
+        </div>
+
+        <div style="align-self:flex-end;max-width:76%;"><div style="background:var(--color-accent-800);color:var(--color-accent-100);padding:var(--space-3) var(--space-4);border-radius:var(--radius-lg);font-size:14px;line-height:1.5;">Love “Current.” Make the taglines punchier and a bit more playful.</div>
+          <div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-top:5px;font-size:11px;color:var(--color-neutral-500);cursor:pointer;" onClick="{{ openRewind }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-7.3L3 8"/><path d="M3 3v5h5"/></svg>Rewind to here</div>
+        </div>
+
+        <div style="align-self:flex-start;max-width:84%;display:flex;flex-direction:column;gap:var(--space-3);">
+          <details style="background:var(--color-surface);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);">
+            <summary style="display:flex;align-items:center;gap:9px;padding:9px var(--space-3);font-size:12px;color:var(--color-neutral-500);">
+              <span style="display:inline-flex;gap:6px;color:var(--color-accent);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg></span>
+              Used 2 tools &amp; 1 skill · <b style="color:var(--color-text);">Show the work</b>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto;"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <div style="padding:var(--space-3);display:flex;flex-direction:column;gap:8px;font-size:12px;border-top:1px solid var(--color-divider);">
+              <div style="display:flex;gap:9px;align-items:center;"><span class="chip">WEB</span><span>Searched “playful beverage taglines”</span></div>
+              <div style="display:flex;gap:9px;align-items:center;"><span class="chip">MCP</span><span>Notion — read “Brand voice” doc</span></div>
+              <div style="display:flex;gap:9px;align-items:center;"><span class="chip">SKILL</span><span>Playful Copywriting</span></div>
+            </div>
+          </details>
+          <div style="font-size:14px;line-height:1.6;">
+            <p style="margin:0 0 10px;">On it — punchier and more playful, all built around <b>Current</b>:</p>
+            <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;"><li>“Go with the Current.”</li><li>“Catch your Current.”</li><li>“Stay Current. Stay hydrated.”</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:var(--space-4);border-top:1px solid var(--color-divider);flex:none;">
+        <div style="background:var(--color-surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:var(--space-3);">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:var(--space-3);">
+            <details class="pop">
+              <summary class="btn btn-secondary" style="font-size:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add</summary>
+              <div class="pop-panel" style="bottom:calc(100% + 6px);left:0;width:210px;background:var(--color-surface);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);padding:6px;font-size:13px;">
+                <div class="mrow">Tools</div><div class="mrow">Skills</div><div class="mrow">Connectors (MCP)</div><div class="mrow">Files</div>
+              </div>
+            </details>
+            <span style="width:1px;height:20px;background:var(--color-divider);"></span>
+            <span class="chip">Web search <span style="opacity:.6;">✕</span></span>
+            <span class="chip">Code <span style="opacity:.6;">✕</span></span>
+            <span class="chip">Notion <span style="opacity:.6;">✕</span></span>
+          </div>
+          <textarea class="input" placeholder="Message Deku…" style="border:none;background:transparent;padding:4px;min-height:44px;width:100%;color:var(--color-text);resize:none;font-family:inherit;"></textarea>
+          <div style="display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-2);">
+            <span style="font-size:11px;color:var(--color-neutral-500);display:inline-flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--color-accent);display:inline-block;"></span>Claude Sonnet 4.5</span>
+            <span style="font-size:11px;color:var(--color-neutral-500);">· 48% context</span>
+            <div style="flex:1;"></div>
+            <button class="btn btn-primary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>Send</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ═══ TOAST ═══ -->
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div class="toast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:80;background:var(--color-accent-800);color:var(--color-accent-100);padding:12px 18px;border-radius:var(--radius-md);box-shadow:var(--shadow-lg);font-size:13px;display:flex;align-items:center;gap:10px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-200)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{{ toast }}
+    </div>
+  </sc-if>
+
+  <!-- ═══ MODAL OVERLAY ═══ -->
+  <sc-if value="{{ anyModal }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ close }}" style="position:fixed;inset:0;z-index:60;background:color-mix(in srgb,#000 55%,transparent);display:flex;align-items:center;justify-content:center;padding:24px;">
+      <div class="modal-in" onClick="{{ stop }}" style="position:relative;width:{{ modalWidth }};max-width:94vw;max-height:88vh;overflow:auto;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);">
+        <button class="btn btn-icon" onClick="{{ close }}" title="Close" style="position:absolute;top:18px;right:18px;z-index:3;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+
+        <!-- ── REWIND ── -->
+        <sc-if value="{{ showRewind }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:28px 32px 30px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-7.3L3 8"/><path d="M3 3v5h5"/></svg><div style="font-size:19px;">Rewind the conversation</div></div>
+            <div style="font-size:13px;color:var(--color-neutral-500);margin-bottom:var(--space-4);">Pick where to go back to. Everything after it stays safe on a new branch — nothing is lost.</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <sc-for list="{{ rewindRows }}" as="m" hint-placeholder-count="8">
+                <button class="btn-plain row-anim {{ m.dropCls }}" onClick="{{ m.onSelect }}" style="display:flex;align-items:flex-start;gap:12px;padding:11px 12px;border:1px solid {{ m.border }};border-radius:var(--radius-md);background:{{ m.bg }};">
+                  <span style="font-size:11px;font-weight:600;color:var(--color-neutral-500);width:20px;flex:none;padding-top:2px;">{{ m.num }}</span>
+                  <span class="chip" style="flex:none;">{{ m.role }}</span>
+                  <span style="flex:1;font-size:13px;line-height:1.4;text-align:left;">{{ m.text }}</span>
+                  <span style="font-size:11px;color:var(--color-accent);flex:none;padding-top:2px;">{{ m.action }}</span>
+                </button>
+              </sc-for>
+            </div>
+            <sc-if value="{{ rewinding }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:var(--space-4);display:flex;align-items:center;gap:10px;color:var(--color-accent);font-size:13px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-7.3L3 8"/><path d="M3 3v5h5"/></svg>Rewinding — winding the later messages onto a fresh branch…</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- ── COMBINE ── -->
+        <sc-if value="{{ showCombine }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:28px 32px 30px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(180 12 12)"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></g></svg><div style="font-size:19px;">Combine branches</div></div>
+            <div style="font-size:13px;color:var(--color-neutral-500);margin-bottom:var(--space-4);">Take the messages from <b style="color:var(--color-text);">“{{ activeName }}”</b> and replay them on top of another branch, so the two become one line.</div>
+            <div style="display:flex;gap:var(--space-6);align-items:stretch;">
+              <div style="flex:none;width:180px;">
+                <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-500);margin-bottom:8px;">Combine onto…</div>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                  <sc-for list="{{ combineTargets }}" as="t" hint-placeholder-count="2">
+                    <button class="btn-plain" onClick="{{ t.onSelect }}" style="display:flex;align-items:center;gap:9px;padding:10px;border:1px solid {{ t.border }};border-radius:var(--radius-md);background:{{ t.bg }};font-size:13px;">
+                      <span style="width:9px;height:9px;border-radius:50%;background:var(--color-neutral-500);flex:none;"></span><span style="flex:1;text-align:left;">{{ t.name }}</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:{{ t.chev }};"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="flex:1;border-left:1px solid var(--color-divider);padding-left:var(--space-6);">
+                <div style="position:relative;width:300px;height:360px;margin:0 auto;">
+                  <svg width="300" height="340" style="position:absolute;left:0;top:0;overflow:visible;">
+                    <line x1="40" y1="20" x2="40" y2="200" stroke="var(--color-neutral-600)" stroke-width="2"/>
+                    <line x1="40" y1="200" x2="40" y2="320" stroke="var(--color-accent)" stroke-width="2" style="opacity:{{ newRailOp }};transition:opacity .6s;"/>
+                    <path d="M40,80 L40,128 Q40,140 52,140 L180,140" fill="none" stroke="var(--color-neutral-600)" stroke-width="2" stroke-linecap="round" style="opacity:{{ branchLineOp }};transition:opacity .6s;"/>
+                  </svg>
+                  <div style="position:absolute;left:31px;top:11px;width:18px;height:18px;border-radius:50%;background:var(--color-neutral-500);"></div>
+                  <div style="position:absolute;left:31px;top:71px;width:18px;height:18px;border-radius:50%;background:var(--color-neutral-500);"></div>
+                  <div style="position:absolute;left:31px;top:131px;width:18px;height:18px;border-radius:50%;background:var(--color-neutral-500);"></div>
+                  <div style="position:absolute;left:31px;top:191px;width:18px;height:18px;border-radius:50%;background:var(--color-neutral-400);"></div>
+                  <div style="position:absolute;left:62px;top:186px;font-size:11px;color:var(--color-neutral-500);">“{{ targetName }}” tip</div>
+                  <div class="commit {{ pulseCls }}" style="width:18px;height:18px;left:{{ c1x }};top:{{ c1y }};background:var(--color-accent);"></div>
+                  <div class="commit {{ pulseCls }}" style="width:18px;height:18px;left:{{ c2x }};top:{{ c2y }};background:var(--color-accent);"></div>
+                  <div class="fadeable" style="position:absolute;left:200px;top:132px;font-size:11px;color:var(--color-accent);opacity:{{ branchLineOp }};">“{{ activeName }}”</div>
+                  <div style="position:absolute;left:0;bottom:0;width:100%;font-size:13px;color:var(--color-accent);min-height:20px;">{{ phaseLabel }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ── SUMMARIZE ── -->
+        <sc-if value="{{ showSummarize }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:28px 32px 30px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg><div style="font-size:19px;">Summarize messages</div></div>
+            <div style="font-size:13px;color:var(--color-neutral-500);margin-bottom:var(--space-4);">{{ sumHint }}</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <sc-for list="{{ sumRows }}" as="m" hint-placeholder-count="8">
+                <button class="btn-plain row-anim {{ m.dropCls }}" onClick="{{ m.onSelect }}" style="display:flex;align-items:flex-start;gap:12px;padding:11px 12px;border:1px solid {{ m.border }};border-radius:var(--radius-md);background:{{ m.bg }};">
+                  <span style="width:16px;flex:none;padding-top:2px;">{{ m.tick }}</span>
+                  <span style="font-size:11px;font-weight:600;color:var(--color-neutral-500);width:16px;flex:none;padding-top:2px;">{{ m.num }}</span>
+                  <span class="chip" style="flex:none;">{{ m.role }}</span>
+                  <span style="flex:1;font-size:13px;line-height:1.4;text-align:left;">{{ m.text }}</span>
+                </button>
+              </sc-for>
+            </div>
+            <div style="display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-4);">
+              <div style="flex:1;font-size:13px;color:var(--color-neutral-500);">{{ sumStatus }}</div>
+              <button class="btn btn-ghost" onClick="{{ close }}">Cancel</button>
+              <button class="btn btn-primary" onClick="{{ doSummarize }}" style="opacity:{{ sumBtnOp }};pointer-events:{{ sumBtnPe }};"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg>{{ sumBtnLabel }}</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ── TREE ── -->
+        <sc-if value="{{ showTree }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:28px 32px 30px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M5 8.5v3a3 3 0 0 0 3 3h1.5M19 8.5v3a3 3 0 0 1-3 3h-1.5M12 14.5v1"/></svg><div style="font-size:19px;">Conversation tree</div></div>
+            <div style="font-size:13px;color:var(--color-neutral-500);margin-bottom:var(--space-4);">Every path this chat has taken. Click a branch to switch to it, or use the actions below.</div>
+            <div style="display:flex;gap:var(--space-6);flex-wrap:wrap;">
+              <div style="flex:1;position:relative;height:250px;min-width:300px;">
+                <svg width="300" height="250" style="position:absolute;left:0;top:0;overflow:visible;">
+                  <line x1="40" y1="30" x2="40" y2="90" stroke="var(--color-neutral-600)" stroke-width="2"/>
+                  <line x1="40" y1="90" x2="40" y2="210" stroke="var(--color-accent)" stroke-width="2"/>
+                  <path d="M40,90 L40,138 Q40,150 52,150 L170,150" fill="none" stroke="var(--color-neutral-600)" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <button class="btn-plain" onClick="{{ selStart }}" style="position:absolute;left:31px;top:21px;display:flex;align-items:center;gap:12px;">
+                  <span style="width:18px;height:18px;border-radius:50%;background:var(--color-neutral-500);box-shadow:{{ ringStart }};flex:none;"></span>
+                  <span style="font-size:12px;color:{{ fgStart }};white-space:nowrap;">Start</span>
+                </button>
+                <button class="btn-plain" onClick="{{ selShort }}" style="position:absolute;left:31px;top:81px;display:flex;align-items:center;gap:12px;">
+                  <span style="width:18px;height:18px;border-radius:50%;background:var(--color-neutral-500);box-shadow:{{ ringShort }};flex:none;"></span>
+                  <span style="font-size:12px;color:{{ fgShort }};white-space:nowrap;">Shortlist “Current”</span>
+                </button>
+                <button class="btn-plain" onClick="{{ selFormal }}" style="position:absolute;left:161px;top:141px;display:flex;align-items:center;gap:12px;">
+                  <span style="width:18px;height:18px;border-radius:50%;border:2px solid var(--color-neutral-500);box-shadow:{{ ringFormal }};flex:none;"></span>
+                  <span style="font-size:12px;color:{{ fgFormal }};white-space:nowrap;">Formal tone</span>
+                </button>
+                <button class="btn-plain" onClick="{{ selPlayful }}" style="position:absolute;left:31px;top:201px;display:flex;align-items:center;gap:12px;">
+                  <span style="width:18px;height:18px;border-radius:50%;background:var(--color-accent);box-shadow:{{ ringPlayful }};flex:none;"></span>
+                  <span style="font-size:12px;color:var(--color-accent);font-weight:600;white-space:nowrap;">{{ activeName }} — you are here</span>
+                </button>
+              </div>
+              <div style="flex:none;width:210px;display:flex;flex-direction:column;gap:8px;border-left:1px solid var(--color-divider);padding-left:var(--space-6);">
+                <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-500);">Actions</div>
+                <div style="font-size:12px;color:var(--color-neutral-500);margin-bottom:4px;">Selected: <b style="color:var(--color-text);">{{ treeSelName }}</b></div>
+                <button class="btn btn-secondary btn-block" onClick="{{ openRewind }}" style="justify-content:flex-start;gap:8px;opacity:{{ treeGateOp }};pointer-events:{{ treeGatePe }};"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-7.3L3 8"/><path d="M3 3v5h5"/></svg>Rewind…</button>
+                <button class="btn btn-secondary btn-block" onClick="{{ openCombine }}" style="justify-content:flex-start;gap:8px;opacity:{{ treeGateOp }};pointer-events:{{ treeGatePe }};"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(180 12 12)"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></g></svg>Combine…</button>
+                <button class="btn btn-secondary btn-block" onClick="{{ openSummarize }}" style="justify-content:flex-start;gap:8px;opacity:{{ treeGateOp }};pointer-events:{{ treeGatePe }};"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg>Summarize…</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:820}}">
+class Component extends DCLogic {
+  state = {
+    theme: 'light',
+    sidebarOpen: true,
+    modal: null,
+    rewindTo: null, rewinding: false,
+    combineTarget: null, phase: 0,
+    sumFrom: null, sumTo: null, summarizing: false,
+    branches: [
+      { id: 'main', name: 'Main', meta: '14' },
+      { id: 'playful', name: 'Playful tone', meta: 'on' },
+      { id: 'formal', name: 'Formal tone', meta: '' },
+    ],
+    activeBranch: 'playful',
+    extraSummary: false, extraSummaryText: '', extraSummaryFreed: '',
+    toast: null,
+  };
+
+  msgs = [
+    { num: 1, role: 'you', text: 'Help me name a new sparkling water brand.' },
+    { num: 2, role: 'Deku', text: 'Ten to start: Current, Tide, Fizz, Rise, Halo, Drift, Ripple, Clear, Loft, Verve.' },
+    { num: 3, role: 'you', text: 'I like Current and Tide. Compare them.' },
+    { num: 4, role: 'Deku', text: '“Current” feels modern and energetic; “Tide” is calmer and more natural.' },
+    { num: 5, role: 'you', text: 'Go with Current. Draft a few taglines.' },
+    { num: 6, role: 'Deku', text: 'Three: “Stay Current.” · “The future, bottled.” · “Fresh thinking, in every sip.”' },
+    { num: 7, role: 'you', text: 'Love “Current.” Make the taglines punchier and a bit more playful.' },
+    { num: 8, role: 'Deku', text: 'Punchier: “Go with the Current.” · “Catch your Current.” · “Stay Current. Stay hydrated.”' },
+  ];
+
+  reset(extra) { return Object.assign({ modal: null, rewindTo: null, rewinding: false, combineTarget: null, phase: 0, sumFrom: null, sumTo: null, summarizing: false, treeSelected: null }, extra || {}); }
+  open(m) { this.setState(this.reset({ modal: m })); }
+  close() { if (this.state.rewinding || this.state.phase || this.state.summarizing) return; this.setState(this.reset()); }
+
+  flashToast(msg) { clearTimeout(this._t); this.setState({ toast: msg }); this._t = setTimeout(() => this.setState({ toast: null }), 3400); }
+
+  doRewind(i) {
+    if (this.state.rewinding) return;
+    this.setState({ rewindTo: i, rewinding: true });
+    setTimeout(() => {
+      const branches = this.state.branches.slice();
+      const n = branches.filter(b => b.name.startsWith('Rewind')).length + 1;
+      const name = 'Rewind ' + n;
+      branches.push({ id: 'rw' + Date.now(), name, meta: 'new' });
+      this.setState(this.reset({ branches, activeBranch: branches[branches.length - 1].id }));
+      this.flashToast('Rewound to message ' + (i + 1) + ' — new branch “' + name + '” created');
+    }, 1500);
+  }
+
+  pickCombine(id) {
+    if (this.state.phase) return;
+    this.setState({ combineTarget: id, phase: 1 });
+    setTimeout(() => this.setState({ phase: 2 }), 800);
+    setTimeout(() => this.setState({ phase: 3 }), 1700);
+    setTimeout(() => {
+      const t = this.state.branches.find(b => b.id === id);
+      this.setState(this.reset());
+      this.flashToast('Combined “' + this.activeName() + '” onto “' + t.name + '”');
+    }, 2700);
+  }
+
+  pickSum(i) {
+    if (this.state.summarizing) return;
+    let { sumFrom, sumTo } = this.state;
+    if (sumFrom === null) this.setState({ sumFrom: i, sumTo: null });
+    else if (sumTo === null) {
+      if (i === sumFrom) this.setState({ sumFrom: null });
+      else this.setState({ sumFrom: Math.min(sumFrom, i), sumTo: Math.max(sumFrom, i) });
+    } else this.setState({ sumFrom: i, sumTo: null });
+  }
+  doSummarize() {
+    if (this.state.sumFrom === null || this.state.summarizing) return;
+    this.setState({ summarizing: true });
+    setTimeout(() => {
+      const lo = this.state.sumFrom, hi = this.state.sumTo == null ? lo : this.state.sumTo;
+      const n = hi - lo + 1;
+      this.setState(this.reset({ extraSummary: true, extraSummaryText: 'Summarized ' + n + ' message' + (n > 1 ? 's' : '') + ' (‘' + (lo + 1) + '’ to ‘' + (hi + 1) + '’)', extraSummaryFreed: (n * 1.4).toFixed(0) + 'k' }));
+      this.flashToast('Summarized ' + n + ' message' + (n > 1 ? 's' : ''));
+    }, 1200);
+  }
+
+  activeName() { const b = this.state.branches.find(x => x.id === this.state.activeBranch); return b ? b.name : ''; }
+
+  renderVals() {
+    const s = this.state;
+    const scopeClass = s.theme === 'light' ? 'scope-industry' : 'scope-nocturne';
+    const activeName = this.activeName();
+
+    const branches = s.branches.map(b => {
+      const active = b.id === s.activeBranch;
+      return {
+        name: b.name, meta: b.meta,
+        bg: active ? 'color-mix(in srgb,var(--color-accent) 22%,transparent)' : 'transparent',
+        rail: active ? 'inset 2px 0 0 var(--color-accent)' : 'none',
+        fg: active ? 'var(--color-text)' : 'var(--color-neutral-500)',
+        dot: active ? 'var(--color-accent)' : (b.meta === '14' ? 'var(--color-neutral-500)' : 'transparent'),
+        dotBorder: active || b.meta === '14' ? 'none' : '1.5px solid var(--color-neutral-500)',
+        onSwitch: () => this.setState({ activeBranch: b.id }),
+      };
+    });
+
+    const rewindRows = this.msgs.map((m, i) => ({
+      num: m.num, role: m.role, text: m.text,
+      dropCls: (s.rewinding && s.rewindTo !== null && i > s.rewindTo) ? 'row-drop' : '',
+      bg: (s.rewindTo === i) ? 'color-mix(in srgb,var(--color-accent) 15%,transparent)' : 'transparent',
+      border: (s.rewindTo === i) ? 'var(--color-accent)' : 'var(--color-divider)',
+      action: (s.rewindTo === i) ? 'go here' : 'rewind',
+      onSelect: () => this.doRewind(i),
+    }));
+
+    const lo = s.sumFrom, hi = s.sumTo == null ? s.sumFrom : s.sumTo;
+    const sumRows = this.msgs.map((m, i) => {
+      const inRange = lo !== null && i >= lo && i <= hi;
+      return {
+        num: m.num, role: m.role, text: m.text,
+        tick: inRange ? '●' : '○',
+        dropCls: (s.summarizing && inRange) ? 'row-drop' : '',
+        bg: inRange ? 'color-mix(in srgb,var(--color-accent) 13%,transparent)' : 'transparent',
+        border: inRange ? 'var(--color-accent)' : 'var(--color-divider)',
+        onSelect: () => this.pickSum(i),
+      };
+    });
+    const sumCount = lo === null ? 0 : (hi - lo + 1);
+    let sumStatus, sumHint;
+    if (lo === null) { sumStatus = 'Click a message to set the start of the range.'; }
+    else if (s.sumTo === null) { sumStatus = 'Start set at message ' + (lo + 1) + '. Click another to set the end — or summarize just this one.'; }
+    else { sumStatus = 'Selected messages ' + (lo + 1) + '–' + (hi + 1) + ' (' + sumCount + ').'; }
+    sumHint = 'Pick a start and an end — or just one message. Everything in between becomes a single short summary.';
+
+    // combine animation geometry
+    const moved = s.phase >= 2;
+    const c1 = moved ? { x: 31, y: 251 } : { x: 171, y: 131 };
+    const c2 = moved ? { x: 31, y: 311 } : { x: 171, y: 191 };
+    const combineTargets = s.branches.filter(b => b.id !== s.activeBranch).map(b => ({
+      name: b.name,
+      onSelect: () => this.pickCombine(b.id),
+      bg: (s.combineTarget === b.id) ? 'color-mix(in srgb,var(--color-accent) 15%,transparent)' : 'transparent',
+      border: (s.combineTarget === b.id) ? 'var(--color-accent)' : 'var(--color-divider)',
+      chev: (s.combineTarget === b.id) ? '1' : '.4',
+    }));
+    const tName = (s.branches.find(b => b.id === s.combineTarget) || {}).name || 'Main';
+    const phaseLabel = ['Pick a branch on the left to combine onto.', 'Lifting “' + activeName + '” off the branch point…', 'Replaying your messages onto “' + tName + '”…', 'Done — the two histories are now one line.'][s.phase];
+    const ts = s.treeSelected;
+    const ring = k => ts === k ? '0 0 0 4px color-mix(in srgb,var(--color-accent) 25%,transparent)' : 'none';
+    const fg = k => ts === k ? 'var(--color-accent)' : 'var(--color-neutral-500)';
+    const treeNames = { start: 'Start', short: 'Shortlist “Current”', playful: activeName, formal: 'Formal tone' };
+
+    return {
+      scopeClass,
+      lightOn: s.theme === 'light' ? 'on' : '', darkOn: s.theme === 'dark' ? 'on' : '',
+      setLight: () => this.setState({ theme: 'light' }), setDark: () => this.setState({ theme: 'dark' }),
+      sidebarOpen: s.sidebarOpen, toggleSidebar: () => this.setState({ sidebarOpen: !s.sidebarOpen }),
+      branches, branchCount: String(s.branches.length), activeName,
+      selStart: () => this.setState({ treeSelected: 'start' }),
+      selShort: () => this.setState({ treeSelected: 'short' }),
+      selPlayful: () => this.setState({ treeSelected: 'playful' }),
+      selFormal: () => this.setState({ treeSelected: 'formal' }),
+      ringStart: ring('start'), ringShort: ring('short'), ringPlayful: ring('playful'), ringFormal: ring('formal'),
+      fgStart: fg('start'), fgShort: fg('short'), fgFormal: fg('formal'),
+      treeSelName: ts ? treeNames[ts] : '—',
+      treeGateOp: ts ? '1' : '.45', treeGatePe: ts ? 'auto' : 'none',
+
+      anyModal: s.modal !== null, modal: s.modal,
+      showRewind: s.modal === 'rewind', showCombine: s.modal === 'combine', showSummarize: s.modal === 'summarize', showTree: s.modal === 'tree',
+      modalWidth: s.modal === 'summarize' || s.modal === 'rewind' ? '640px' : (s.modal === 'combine' ? '720px' : '640px'),
+      openRewind: () => this.open('rewind'), openCombine: () => this.open('combine'), openSummarize: () => this.open('summarize'), openTree: () => this.open('tree'),
+      close: () => this.close(), stop: (e) => e.stopPropagation(),
+
+      rewindRows, rewinding: s.rewinding,
+      sumRows, sumStatus, sumHint,
+      doSummarize: () => this.doSummarize(),
+      sumBtnOp: sumCount > 0 ? '1' : '.4', sumBtnPe: sumCount > 0 ? 'auto' : 'none',
+      sumBtnLabel: sumCount > 0 ? ('Summarize ' + sumCount + ' message' + (sumCount > 1 ? 's' : '')) : 'Summarize',
+
+      combineTargets, phaseLabel, targetName: tName,
+      c1x: c1.x + 'px', c1y: c1.y + 'px', c2x: c2.x + 'px', c2y: c2.y + 'px',
+      pulseCls: s.phase === 1 ? 'pulse' : '',
+      branchLineOp: moved ? '0' : '1', newRailOp: moved ? '1' : '0',
+
+      extraSummary: s.extraSummary, extraSummaryText: s.extraSummaryText, extraSummaryFreed: s.extraSummaryFreed,
+      toast: s.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

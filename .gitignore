@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+server/data/
+*.tsbuildinfo
+# original handoff archive — the extracted copy lives in design-handoff/
+*.zip
