@@ -92,7 +92,7 @@ export function CombineModal() {
                   style={{ opacity: moved ? 1 : 0, transition: 'opacity .6s' }}
                 />
                 <path
-                  d="M40,80 L40,128 Q40,140 52,140 L180,140"
+                  d="M40,80 L40,128 Q40,140 52,140 L180,140 L180,200"
                   fill="none" stroke="var(--color-neutral-600)" strokeWidth={2} strokeLinecap="round"
                   style={{ opacity: moved ? 0 : 1, transition: 'opacity .6s' }}
                 />
