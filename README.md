@@ -1,5 +1,20 @@
 # Deku — agentic chat with branching conversations
 
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![React 18](https://img.shields.io/badge/React_18-61DAFB?logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
+![LangGraph JS](https://img.shields.io/badge/LangGraph_JS-ReAct_agent-1C3C3C?logo=langchain&logoColor=white)
+![Providers](https://img.shields.io/badge/LLM_providers-8-9184d9)
+
+![Deku — light theme](docs/screenshot-light.png)
+
+<details>
+<summary>Dark theme</summary>
+
+![Deku — dark theme](docs/screenshot-dark.png)
+
+</details>
+
 A standalone webapp implementing the `Agentic Chat.dc.html` design from the Claude Design handoff
 (`design-handoff/`). Conversations are trees: you can **branch** to explore directions, **rewind**
 to any earlier message (the later messages stay safe on the old branch), **combine** one branch
