@@ -22,13 +22,19 @@ function layoutTree(branches: Branch[]): Node[] {
   }
   for (const list of children.values()) list.sort((a, b) => a.createdAt - b.createdAt);
 
+  // Every node gets its own row so labels and elbow lines never collide.
+  // Side branches are laid out before the rail continuation (children[0]),
+  // matching the design's tree: parent → side forks to the right → rail below.
   const nodes: Node[] = [];
   let nextCol = 0;
-  const place = (b: Branch, parent: Node | null, inheritCol: boolean) => {
-    const col = inheritCol && parent ? parent.col : nextCol++;
-    const node: Node = { branch: b, col, row: parent ? parent.row + 1 : 0, parent };
+  let nextRow = 0;
+  const place = (b: Branch, parent: Node | null, isRail: boolean) => {
+    const col = isRail && parent ? parent.col : nextCol++;
+    const node: Node = { branch: b, col, row: nextRow++, parent };
     nodes.push(node);
-    (children.get(b.id) ?? []).forEach((child, i) => place(child, node, i === 0));
+    const kids = children.get(b.id) ?? [];
+    for (const side of kids.slice(1)) place(side, node, false);
+    if (kids[0]) place(kids[0], node, true);
   };
   (children.get(null) ?? []).forEach((root) => place(root, null, false));
   return nodes;

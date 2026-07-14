@@ -20,6 +20,54 @@ A standalone webapp implementing the `Agentic Chat.dc.html` design from the Clau
 to any earlier message (the later messages stay safe on the old branch), **combine** one branch
 onto another, and **summarize** message ranges to reclaim context.
 
+## Features
+
+### Conversation tree
+
+![Conversation tree modal](docs/modal-tree.png)
+
+Every path the chat has taken, laid out as a git-style graph: the solid neutral node is the root,
+hollow rings are branches you can jump to, and the accent node marks where you are. Click a node
+to select it, then switch to it or launch rewind / combine / summarize against it. The rail to
+your current branch is drawn in the accent color.
+
+### Rewind
+
+![Rewind modal](docs/modal-rewind.png)
+
+Pick any earlier message and continue from there on a fresh `Rewind N` branch — the messages
+after that point are never deleted, they stay on the branch you rewound from. The rows below
+your pick animate away before the rewind commits. Every user bubble also has a "Rewind to here"
+shortcut that opens this modal with that message preselected.
+
+### Combine
+
+![Combine branches modal](docs/modal-combine.png)
+
+Replays the current branch's messages on top of another branch so two explorations become one
+line — the animation lifts the branch's commits off the fork point and winds them onto the
+target's tip. You can also trigger it by dragging one branch onto another in the sidebar.
+Afterwards the source branch is removed and any of its children are re-pointed at the target.
+
+### Summarize
+
+![Summarize modal](docs/modal-summarize.png)
+
+Select a start and end message (or a single message) and the range is compressed into one short
+summary node by the current model. The summary card in the transcript shows what was freed and
+keeps the originals behind a "Show original" toggle — nothing is destroyed. Also reachable via
+"Compact conversation" in the context meter.
+
+### API keys
+
+![API keys modal](docs/modal-keys.png)
+
+Click (or right-click) the avatar → **API keys…**. One row per supported provider — Anthropic,
+OpenAI, Google, Mistral, Groq, Cohere, xAI, DeepSeek — plus tool keys like Tavily web search.
+Keys live in your browser's localStorage only and are sent per-request; the server never stores
+them. Saved keys show masked with a "browser" source tag, and a key set here overrides the
+server's `.env` fallback for that provider.
+
 ## Stack
 
 - **Frontend** — React 18 + Vite + TypeScript. Themes are the design system's `scope-industry`

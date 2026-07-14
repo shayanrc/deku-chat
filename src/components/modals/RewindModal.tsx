@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { roleLabel, useApp } from '../../state';
+import { previewText, roleLabel, useApp } from '../../state';
 import { Modal } from './Modal';
 import { RewindIcon } from '../icons';
 
@@ -60,7 +60,7 @@ export function RewindModal() {
               </span>
               <span className="chip" style={{ flex: 'none' }}>{roleLabel(m)}</span>
               <span style={{ flex: 1, fontSize: 13, lineHeight: 1.4, textAlign: 'left', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                {m.content}
+                {previewText(m.content)}
               </span>
               <span style={{ fontSize: 11, color: 'var(--color-accent)', flex: 'none', paddingTop: 2 }}>
                 {selected === i ? 'go here' : 'rewind'}

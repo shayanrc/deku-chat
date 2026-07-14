@@ -479,3 +479,13 @@ export function roleLabel(m: Msg): string {
 export function fmtTokens(n: number): string {
   return n >= 1000 ? `${Math.round(n / 1000)}k` : String(n);
 }
+
+/** flatten message content to a single plain-text line for picker rows */
+export function previewText(s: string): string {
+  return s
+    .replace(/```[\s\S]*?```/g, ' [code] ')
+    .replace(/[*_`#]|^>\s?/gm, '')
+    .replace(/\s*\n\s*[-•]\s*/g, ' · ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}

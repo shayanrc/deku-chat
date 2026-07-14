@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../../state';
 import { Modal } from './Modal';
-import { Check } from '../icons';
+import { Check, KeyIcon } from '../icons';
 
 function KeyRow({
   label,
@@ -80,7 +80,7 @@ export function ApiKeysModal() {
     <Modal width={620} onClose={app.closeModal}>
       <div className="modal-pad">
         <div className="modal-title">
-          <span style={{ color: 'var(--color-accent)', fontSize: 20 }}>🔑</span>
+          <KeyIcon size={20} style={{ color: 'var(--color-accent)' }} />
           <div>API keys</div>
         </div>
         <div className="modal-sub">
