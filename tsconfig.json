@@ -3,5 +3,5 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["src", "shared", "server", "vite.config.ts"]
+  "include": ["shared", "server"]
 }

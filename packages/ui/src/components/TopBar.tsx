@@ -104,14 +104,15 @@ export function TopBar() {
       >
         {(close) =>
           app.meta?.providers.map((p) => {
-            const ready = app.providerReady(p.envKey);
+            const blocked = Boolean(p.unavailableReason);
+            const ready = !blocked && app.providerReady(p.envKey);
             return (
               <button
                 type="button"
                 key={p.id}
                 className={`btn-plain mrow ${p.id === app.providerId ? 'on' : ''} ${ready ? '' : 'disabled'}`}
                 aria-disabled={!ready}
-                title={ready ? undefined : 'Right-click the avatar → API keys… to add one'}
+                title={ready ? undefined : (p.unavailableReason ?? 'Right-click the avatar → API keys… to add one')}
                 onClick={() => {
                   if (!ready) return;
                   app.setProvider(p.id);
@@ -120,7 +121,9 @@ export function TopBar() {
               >
                 <span>{p.name}</span>
                 {p.id === app.providerId && <Check style={{ color: 'var(--color-accent)' }} />}
-                {!ready && <span style={{ fontSize: 10 }} className="muted">no key</span>}
+                {!ready && (
+                  <span style={{ fontSize: 10 }} className="muted">{blocked ? 'n/a' : 'no key'}</span>
+                )}
               </button>
             );
           })

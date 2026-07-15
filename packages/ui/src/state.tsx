@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { api } from './api';
-import { estimateTokens, messageTokens } from '../shared/types';
-import type { ApiKeys, Branch, Conversation, ConversationSummary, Meta, Msg, ToolEvent } from '../shared/types';
+import type { Backend } from './backend.ts';
+import { estimateTokens, messageTokens } from '@deku/core';
+import type { ApiKeys, Branch, Conversation, ConversationSummary, Meta, Msg, ToolEvent } from '@deku/core';
 
 export type ModalKind = 'rewind' | 'combine' | 'summarize' | 'tree' | 'keys' | null;
 
@@ -99,7 +99,9 @@ export function useApp(): AppStore {
   return store;
 }
 
-export function AppProvider({ children }: { children: ReactNode }) {
+/** `backend` must be a stable reference (create it once at module scope in the app shell). */
+export function AppProvider({ backend, children }: { backend: Backend; children: ReactNode }) {
+  const { store, transport } = backend;
   const [meta, setMeta] = useState<Meta | null>(null);
   const [convs, setConvs] = useState<ConversationSummary[]>([]);
   const [conv, setConv] = useState<Conversation | null>(null);
@@ -122,14 +124,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // which conversation is on screen right now — lets stream events land only where they belong
   const viewedConvRef = useRef<string | null>(null);
 
-  const refreshList = useCallback(async () => setConvs(await api.listConversations()), []);
+  const refreshList = useCallback(async () => setConvs(await store.list()), []);
 
   const initRan = useRef(false);
   useEffect(() => {
     if (initRan.current) return;
     initRan.current = true;
     (async () => {
-      const m = await api.meta();
+      const m = await transport.meta();
       setMeta(m);
       const stored = loadStoredKeys();
       const withKey = m.providers.find((p) => p.hasKey || stored[p.envKey]) ?? m.providers[0];
@@ -139,9 +141,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (web && (web.available || (web.envKey && stored[web.envKey]))) {
         setCaps((prev) => ['web_search', ...prev]);
       }
-      const list = await api.listConversations();
+      const list = await store.list();
       setConvs(list);
-      setConv(list.length ? await api.getConversation(list[0].id) : await api.createConversation());
+      setConv(list.length ? await store.get(list[0].id) : await store.create());
       if (!list.length) await refreshList();
     })().catch((err) => flashToast(`Couldn't reach the Deku server: ${err instanceof Error ? err.message : err}`, 'error'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -246,20 +248,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const newChat = useCallback(async () => {
-    setConv(await api.createConversation());
+    setConv(await store.create());
     await refreshList();
   }, [refreshList]);
 
   const selectConversation = useCallback(async (id: string) => {
     setFreshSummaryId(null);
-    setConv(await api.getConversation(id));
+    setConv(await store.get(id));
   }, []);
 
   const switchBranch = useCallback(
     async (branchId: string) => {
       if (!conv || streaming) return;
       setFreshSummaryId(null);
-      setConv(await api.activate(conv.id, branchId));
+      setConv(await store.activate(conv.id, branchId));
     },
     [conv, streaming],
   );
@@ -271,12 +273,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return;
       }
       try {
-        await api.deleteConversation(id);
-        const list = await api.listConversations();
+        await store.remove(id);
+        const list = await store.list();
         setConvs(list);
         if (conv?.id === id) {
-          setConv(list.length ? await api.getConversation(list[0].id) : await api.createConversation());
-          if (!list.length) setConvs(await api.listConversations());
+          setConv(list.length ? await store.get(list[0].id) : await store.create());
+          if (!list.length) setConvs(await store.list());
         }
         flashToast('Conversation deleted');
       } catch (err) {
@@ -290,7 +292,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     async (id: string, title: string) => {
       if (!title.trim()) return;
       try {
-        const updated = await api.renameConversation(id, title.trim());
+        const updated = await store.rename(id, title.trim());
         if (conv?.id === id) setConv(updated);
         await refreshList();
       } catch (err) {
@@ -314,7 +316,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (viewedConvRef.current === convId) setConv(c);
       };
       try {
-        await api.chat(
+        await transport.chat(
           convId,
           { branchId, content, provider: providerId, model: modelId, capabilities: caps, apiKeys },
           (ev) => {
@@ -326,7 +328,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               applyConv(ev.conversation);
             } else if (ev.type === 'error') {
               flashToast(ev.message, 'error');
-              void api.getConversation(convId).then(applyConv);
+              void store.get(convId).then(applyConv);
             }
           },
           ac.signal,
@@ -335,7 +337,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const aborted = err instanceof DOMException && err.name === 'AbortError';
         if (!aborted) flashToast(err instanceof Error ? err.message : String(err), 'error');
         // pick up whatever the server persisted (partial answer on stop/disconnect)
-        void api.getConversation(convId).then(applyConv).catch(() => {});
+        void store.get(convId).then(applyConv).catch(() => {});
       } finally {
         abortRef.current = null;
         setStreaming(null);
@@ -351,7 +353,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const doBranch = useCallback(async () => {
     if (!conv || !activeBranch) return;
     try {
-      const updated = await api.branch(conv.id, activeBranch.id, null);
+      const updated = await store.branch(conv.id, activeBranch.id, null);
       setConv(updated);
       await refreshList();
       const b = updated.branches.find((x) => x.id === updated.activeBranchId);
@@ -366,7 +368,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!conv || !activeBranch) return '';
       const idx = activeBranch.messages.findIndex((m) => m.id === messageId);
       try {
-        const updated = await api.rewind(conv.id, activeBranch.id, messageId);
+        const updated = await store.rewind(conv.id, activeBranch.id, messageId);
         setConv(updated);
         await refreshList();
         const b = updated.branches.find((x) => x.id === updated.activeBranchId);
@@ -385,7 +387,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const sourceName = activeBranch.name;
       const targetName = conv.branches.find((b) => b.id === targetBranchId)?.name;
       try {
-        const updated = await api.combine(conv.id, activeBranch.id, targetBranchId);
+        const updated = await store.combine(conv.id, activeBranch.id, targetBranchId);
         setConv(updated);
         await refreshList();
         flashToast(`Combined “${sourceName}” onto “${targetName}”`);
@@ -402,7 +404,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const msgs = activeBranch.messages;
       const n = msgs.findIndex((m) => m.id === toId) - msgs.findIndex((m) => m.id === fromId) + 1;
       try {
-        const updated = await api.summarize(conv.id, activeBranch.id, fromId, toId, providerId, modelId, apiKeys);
+        const updated = await transport.summarize(conv.id, activeBranch.id, fromId, toId, providerId, modelId, apiKeys);
         setConv(updated);
         const branch = updated.branches.find((b) => b.id === activeBranch.id);
         const summary = branch?.messages.find((m) => m.kind === 'summary' && m.summaryOf?.some((o) => o.id === fromId));
@@ -416,7 +418,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [conv, activeBranch, providerId, modelId, apiKeys, flashToast, reportFailure],
   );
 
-  const store: AppStore = {
+  const appStore: AppStore = {
     meta,
     convs,
     conv,
@@ -467,7 +469,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     doSummarize,
   };
 
-  return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={appStore}>{children}</Ctx.Provider>;
 }
 
 /** All messages in `msgs` role-labelled the way the design labels them. */

@@ -3,7 +3,7 @@ import { useApp } from '../state';
 import { fmtTokens } from '../state';
 import { Markdown } from '../markdown';
 import { BranchIcon, ChevronDown, CodeIcon, RewindIcon, SearchIcon, SummarizeIcon } from './icons';
-import type { Msg, ToolEvent } from '../../shared/types';
+import type { Msg, ToolEvent } from '@deku/core';
 
 function ToolChips({ events }: { events: ToolEvent[] }) {
   const kinds = new Set(events.map((e) => e.kind));

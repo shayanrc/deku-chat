@@ -38,14 +38,15 @@ export function Composer() {
               <>
                 <div className="tiny-label" style={{ padding: '4px 8px' }}>Capabilities</div>
                 {app.meta?.capabilities.map((c) => {
-                  const ready = c.available || (c.envKey ? Boolean(app.apiKeys[c.envKey]) : true);
+                  const blocked = Boolean(c.unavailableReason);
+                  const ready = !blocked && (c.available || (c.envKey ? Boolean(app.apiKeys[c.envKey]) : true));
                   return (
                     <button
                       type="button"
                       key={c.id}
                       className={`btn-plain mrow ${app.caps.includes(c.id) ? 'on' : ''} ${ready ? '' : 'disabled'}`}
                       aria-disabled={!ready}
-                      title={ready ? undefined : `Right-click the avatar → API keys… to add ${c.envKey}`}
+                      title={ready ? undefined : (c.unavailableReason ?? `Right-click the avatar → API keys… to add ${c.envKey}`)}
                       onClick={() => {
                         if (!ready) return;
                         app.toggleCap(c.id);
@@ -54,7 +55,7 @@ export function Composer() {
                     >
                       <span>{c.name}</span>
                       {app.caps.includes(c.id) && <Check style={{ color: 'var(--color-accent)' }} />}
-                      {!ready && <span className="muted" style={{ fontSize: 10 }}>no key</span>}
+                      {!ready && <span className="muted" style={{ fontSize: 10 }}>{blocked ? 'n/a' : 'no key'}</span>}
                     </button>
                   );
                 })}

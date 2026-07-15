@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useApp, type ModalKind } from '../../state';
 import { Modal } from './Modal';
 import { CombineIcon, RewindIcon, SummarizeIcon, TreeIcon } from '../icons';
-import type { Branch } from '../../../shared/types';
+import type { Branch } from '@deku/core';
 
 interface Node {
   branch: Branch;

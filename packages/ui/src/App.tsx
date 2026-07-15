@@ -1,4 +1,5 @@
 import { AppProvider, useApp } from './state';
+import type { Backend } from './backend.ts';
 import { TopBar } from './components/TopBar';
 import { Sidebar } from './components/Sidebar';
 import { ChatHeader } from './components/ChatHeader';
@@ -60,9 +61,9 @@ function Shell() {
   );
 }
 
-export default function App() {
+export default function App({ backend }: { backend: Backend }) {
   return (
-    <AppProvider>
+    <AppProvider backend={backend}>
       <Shell />
     </AppProvider>
   );
