@@ -1,0 +1,55 @@
+{
+  "name": "rewind: fork prefix up to and including the picked message",
+  "conversation": {
+    "id": "c1",
+    "title": "T",
+    "branches": [
+      {
+        "id": "b1",
+        "name": "Main",
+        "forkOf": null,
+        "messages": [
+          { "id": "a", "role": "user", "kind": "message", "content": "A", "createdAt": 1 },
+          { "id": "b", "role": "assistant", "kind": "message", "content": "B", "createdAt": 2 },
+          { "id": "c", "role": "user", "kind": "message", "content": "C", "createdAt": 3 }
+        ],
+        "createdAt": 1
+      }
+    ],
+    "activeBranchId": "b1",
+    "createdAt": 1,
+    "updatedAt": 1
+  },
+  "op": "forkBranch",
+  "args": { "branchId": "b1", "messageId": "b", "name": "Rewind 1" },
+  "expected": {
+    "id": "c1",
+    "title": "T",
+    "branches": [
+      {
+        "id": "b1",
+        "name": "Main",
+        "forkOf": null,
+        "messages": [
+          { "id": "a", "role": "user", "kind": "message", "content": "A", "createdAt": 1 },
+          { "id": "b", "role": "assistant", "kind": "message", "content": "B", "createdAt": 2 },
+          { "id": "c", "role": "user", "kind": "message", "content": "C", "createdAt": 3 }
+        ],
+        "createdAt": 1
+      },
+      {
+        "id": "NEW",
+        "name": "Rewind 1",
+        "forkOf": { "branchId": "b1", "messageId": "b" },
+        "messages": [
+          { "id": "a", "role": "user", "kind": "message", "content": "A", "createdAt": 1 },
+          { "id": "b", "role": "assistant", "kind": "message", "content": "B", "createdAt": 2 }
+        ],
+        "createdAt": 0
+      }
+    ],
+    "activeBranchId": "b1",
+    "createdAt": 1,
+    "updatedAt": 1
+  }
+}

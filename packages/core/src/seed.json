@@ -1,0 +1,105 @@
+{
+  "comment": "Canonical demo seed. All createdAt/updatedAt values are NEGATIVE millisecond offsets from 'now'; materialize by adding Date.now() (see seed.ts / scripts).",
+  "conversations": [
+    {
+      "id": "conv-q3",
+      "title": "Q3 campaign messaging",
+      "branches": [
+        {
+          "id": "br-main",
+          "name": "Main",
+          "forkOf": null,
+          "messages": [
+            {
+              "id": "s1",
+              "role": "assistant",
+              "kind": "summary",
+              "content": "Brainstormed names → shortlisted “Current”.",
+              "summaryOf": [
+                { "id": "m1", "role": "user", "kind": "message", "content": "Help me name a new sparkling water brand.", "createdAt": -1140000 },
+                { "id": "m2", "role": "assistant", "kind": "message", "content": "Ten to start: Current, Tide, Fizz, Rise, Halo, Drift, Ripple, Clear, Loft, Verve.", "createdAt": -1080000 },
+                { "id": "m3", "role": "user", "kind": "message", "content": "I like Current and Tide. Compare them.", "createdAt": -1020000 }
+              ],
+              "freedTokens": 6000,
+              "createdAt": -1020000
+            },
+            { "id": "m4", "role": "assistant", "kind": "message", "content": "“Current” feels modern and energetic; “Tide” is calmer and more natural.", "createdAt": -960000 },
+            { "id": "m5", "role": "user", "kind": "message", "content": "Go with Current. Draft a few taglines.", "createdAt": -900000 },
+            { "id": "m6", "role": "assistant", "kind": "message", "content": "Three to start: “Stay Current.” · “The future, bottled.” · “Fresh thinking, in every sip.”", "createdAt": -840000 }
+          ],
+          "createdAt": -1200000
+        },
+        {
+          "id": "br-playful",
+          "name": "Playful tone",
+          "forkOf": { "branchId": "br-main", "messageId": "m6" },
+          "messages": [
+            { "$ref": "br-main" },
+            { "id": "m7", "role": "user", "kind": "message", "content": "Love “Current.” Make the taglines punchier and a bit more playful.", "createdAt": -780000 },
+            {
+              "id": "m8",
+              "role": "assistant",
+              "kind": "message",
+              "content": "On it — punchier and more playful, all built around **Current**:\n\n- “Go with the Current.”\n- “Catch your Current.”\n- “Stay Current. Stay hydrated.”",
+              "toolEvents": [
+                { "kind": "web", "label": "Web search", "detail": "Searched “playful beverage taglines”" },
+                { "kind": "mcp", "label": "Notion", "detail": "Notion — read “Brand voice” doc" },
+                { "kind": "skill", "label": "Playful Copywriting", "detail": "Playful Copywriting" }
+              ],
+              "createdAt": -720000
+            }
+          ],
+          "createdAt": -600000
+        },
+        {
+          "id": "br-formal",
+          "name": "Formal tone",
+          "forkOf": { "branchId": "br-main", "messageId": "m6" },
+          "messages": [{ "$ref": "br-main" }],
+          "createdAt": -500000
+        }
+      ],
+      "activeBranchId": "br-playful",
+      "createdAt": -1200000,
+      "updatedAt": 0
+    },
+    {
+      "id": "conv-onb",
+      "title": "Onboarding email flow",
+      "branches": [
+        {
+          "id": "conv-onb-main",
+          "name": "Main",
+          "forkOf": null,
+          "messages": [
+            { "id": "conv-onb-m1", "role": "user", "kind": "message", "content": "Draft a 3-step onboarding email flow.", "createdAt": -86460000 },
+            { "id": "conv-onb-m2", "role": "assistant", "kind": "message", "content": "Here is a draft…", "createdAt": -86400000 }
+          ],
+          "createdAt": -86400000
+        }
+      ],
+      "activeBranchId": "conv-onb-main",
+      "createdAt": -86400000,
+      "updatedAt": -86400000
+    },
+    {
+      "id": "conv-comp",
+      "title": "Competitor teardown",
+      "branches": [
+        {
+          "id": "conv-comp-main",
+          "name": "Main",
+          "forkOf": null,
+          "messages": [
+            { "id": "conv-comp-m1", "role": "user", "kind": "message", "content": "Tear down our top competitor’s pricing page.", "createdAt": -172860000 },
+            { "id": "conv-comp-m2", "role": "assistant", "kind": "message", "content": "Key observations…", "createdAt": -172800000 }
+          ],
+          "createdAt": -172800000
+        }
+      ],
+      "activeBranchId": "conv-comp-main",
+      "createdAt": -172800000,
+      "updatedAt": -172800000
+    }
+  ]
+}

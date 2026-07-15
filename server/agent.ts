@@ -9,7 +9,8 @@ import { ChatGroq } from '@langchain/groq';
 import { ChatCohere } from '@langchain/cohere';
 import { ChatXAI } from '@langchain/xai';
 import { ChatDeepSeek } from '@langchain/deepseek';
-import type { ApiKeys, ChatEvent, Msg } from '../shared/types.js';
+import { SUMMARIZE_PROMPT, summaryFallback } from '@deku/core';
+import type { ApiKeys, ChatEvent, Msg } from '@deku/core';
 import { PROVIDERS, SYSTEM_PROMPT } from './config.js';
 import { toolEventFor, toolsFor } from './tools.js';
 
@@ -97,19 +98,9 @@ export async function summarizeMessages(provider: string, model: string, msgs: M
     .join('\n\n');
   try {
     const llm = buildModel(provider, model, apiKeys);
-    const res = await llm.invoke([
-      new SystemMessage(
-        'Compress the following chat excerpt into 1-2 short sentences that preserve every decision, name, and fact needed to continue the conversation. Reply with the summary only.',
-      ),
-      new HumanMessage(transcript),
-    ]);
-    return chunkText(res.content).trim() || fallbackSummary(msgs);
+    const res = await llm.invoke([new SystemMessage(SUMMARIZE_PROMPT), new HumanMessage(transcript)]);
+    return chunkText(res.content).trim() || summaryFallback(msgs);
   } catch {
-    return fallbackSummary(msgs);
+    return summaryFallback(msgs);
   }
-}
-
-function fallbackSummary(msgs: Msg[]): string {
-  const firstLine = (s: string) => s.split('\n')[0].slice(0, 90);
-  return `${firstLine(msgs[0].content)} → ${firstLine(msgs.at(-1)!.content)}`;
 }

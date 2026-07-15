@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
-import { estimateTokens, messageTokens, type ChatEvent, type Meta } from '../shared/types.js';
+import { combineBranches, estimateTokens, spliceSummary, type ChatEvent, type Meta } from '@deku/core';
 import { SYSTEM_PROMPT, capabilityInfos, providerInfos } from './config.js';
 import { runAgent, summarizeMessages } from './agent.js';
 import * as store from './store.js';
@@ -100,17 +100,11 @@ app.post('/api/conversations/:id/rewind', (req, res) => {
 app.post('/api/conversations/:id/combine', (req, res) => {
   const conv = withConv(req, res);
   if (!conv) return;
-  const source = store.getBranch(conv, req.body.sourceBranchId);
-  const target = store.getBranch(conv, req.body.targetBranchId);
-  if (!source || !target || source.id === target.id) return res.status(400).json({ error: 'bad branches' });
-  const targetIds = new Set(target.messages.map((m) => m.id));
-  target.messages.push(...source.messages.filter((m) => !targetIds.has(m.id)).map((m) => ({ ...m })));
-  // re-point branches forked off the source so the tree stays connected
-  for (const b of conv.branches) {
-    if (b.forkOf?.branchId === source.id) b.forkOf.branchId = target.id;
+  try {
+    combineBranches(conv, req.body.sourceBranchId, req.body.targetBranchId);
+  } catch {
+    return res.status(400).json({ error: 'bad branches' });
   }
-  conv.branches = conv.branches.filter((b) => b.id !== source.id);
-  conv.activeBranchId = target.id;
   store.touch(conv);
   res.json(conv);
 });
@@ -125,15 +119,8 @@ app.post('/api/conversations/:id/summarize', async (req, res) => {
   const hi = branch.messages.findIndex((m) => m.id === toId);
   if (lo === -1 || hi === -1 || lo > hi) return res.status(400).json({ error: 'bad range' });
 
-  const originals = branch.messages.slice(lo, hi + 1);
-  const content = await summarizeMessages(provider, model, originals, apiKeys);
-  const freed = originals.reduce((n, m) => n + messageTokens(m), 0) - estimateTokens(content);
-  branch.messages.splice(lo, originals.length, {
-    ...store.makeMsg('assistant', content),
-    kind: 'summary',
-    summaryOf: originals,
-    freedTokens: Math.max(freed, 0),
-  });
+  const content = await summarizeMessages(provider, model, branch.messages.slice(lo, hi + 1), apiKeys);
+  spliceSummary(branch, fromId, toId, content);
   store.touch(conv);
   res.json(conv);
 });

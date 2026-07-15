@@ -1,0 +1,18 @@
+{
+  "name": "nextName counts prefix matches (Rewind 1 and Rewind 10 both count)",
+  "conversation": {
+    "id": "c1",
+    "title": "T",
+    "branches": [
+      { "id": "b1", "name": "Main", "forkOf": null, "messages": [], "createdAt": 1 },
+      { "id": "b2", "name": "Rewind 1", "forkOf": null, "messages": [], "createdAt": 2 },
+      { "id": "b3", "name": "Rewind 10", "forkOf": null, "messages": [], "createdAt": 3 }
+    ],
+    "activeBranchId": "b1",
+    "createdAt": 1,
+    "updatedAt": 1
+  },
+  "op": "nextName",
+  "args": { "base": "Rewind" },
+  "expected": "Rewind 3"
+}

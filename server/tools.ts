@@ -1,6 +1,6 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
-import type { ApiKeys, ToolEvent, ToolKind } from '../shared/types.js';
+import type { ApiKeys, ToolEvent, ToolKind } from '@deku/core';
 
 const makeWebSearch = (tavilyKey: string) =>
   tool(

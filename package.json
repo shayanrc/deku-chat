@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/web",
+    "apps/fullstack/frontend"
+  ],
   "scripts": {
     "dev": "concurrently -n server,web -c blue,magenta \"npm run dev:server\" \"npm run dev:web\"",
     "dev:server": "tsx watch server/index.ts",
