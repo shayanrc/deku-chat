@@ -26,6 +26,13 @@ onto another, and **summarize** message ranges to reclaim context.
 
 ![Conversation tree modal](docs/modal-tree.png)
 
+<details>
+<summary>▶ Watch it in action</summary>
+
+![tree walkthrough](docs/gif-tree.gif)
+
+</details>
+
 Every path the chat has taken, laid out as a git-style graph: the solid neutral node is the root,
 hollow rings are branches you can jump to, and the accent node marks where you are. Click a node
 to select it, then switch to it or launch rewind / combine / summarize against it. The rail to
@@ -34,6 +41,13 @@ your current branch is drawn in the accent color.
 ### Rewind
 
 ![Rewind modal](docs/modal-rewind.png)
+
+<details>
+<summary>▶ Watch it in action</summary>
+
+![rewind walkthrough](docs/gif-rewind.gif)
+
+</details>
 
 Pick any earlier message and continue from there on a fresh `Rewind N` branch — the messages
 after that point are never deleted, they stay on the branch you rewound from. The rows below
@@ -44,6 +58,13 @@ shortcut that opens this modal with that message preselected.
 
 ![Combine branches modal](docs/modal-combine.png)
 
+<details>
+<summary>▶ Watch it in action</summary>
+
+![combine walkthrough](docs/gif-combine.gif)
+
+</details>
+
 Replays the current branch's messages on top of another branch so two explorations become one
 line — the animation lifts the branch's commits off the fork point and winds them onto the
 target's tip. You can also trigger it by dragging one branch onto another in the sidebar.
@@ -53,6 +74,13 @@ Afterwards the source branch is removed and any of its children are re-pointed a
 
 ![Summarize modal](docs/modal-summarize.png)
 
+<details>
+<summary>▶ Watch it in action</summary>
+
+![summarize walkthrough](docs/gif-summarize.gif)
+
+</details>
+
 Select a start and end message (or a single message) and the range is compressed into one short
 summary node by the current model. The summary card in the transcript shows what was freed and
 keeps the originals behind a "Show original" toggle — nothing is destroyed. Also reachable via
@@ -61,6 +89,13 @@ keeps the originals behind a "Show original" toggle — nothing is destroyed. Al
 ### API keys
 
 ![API keys modal](docs/modal-keys.png)
+
+<details>
+<summary>▶ Watch it in action</summary>
+
+![keys walkthrough](docs/gif-keys.gif)
+
+</details>
 
 Click (or right-click) the avatar → **API keys…**. One row per supported provider — Anthropic,
 OpenAI, Google, Mistral, Groq, Cohere, xAI, DeepSeek — plus tool keys like Tavily web search.
@@ -86,9 +121,11 @@ them. Saved keys show masked with a "browser" source tag.
 
 ```bash
 npm install
-cp .env.example .env   # add at least one provider key
 npm run dev            # server on :5175, web on :5173 (proxied)
 ```
+
+Then add a provider key in the app (avatar → **API keys…**) — or optionally
+`cp .env.example .env` for server-side fallback keys.
 
 Open http://localhost:5173.
 
