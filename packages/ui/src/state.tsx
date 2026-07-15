@@ -138,7 +138,7 @@ export function AppProvider({ backend, children }: { backend: Backend; children:
       setProviderId(withKey.id);
       setModelId(withKey.models[0].id);
       const web = m.capabilities.find((c) => c.id === 'web_search');
-      if (web && (web.available || (web.envKey && stored[web.envKey]))) {
+      if (web && !web.unavailableReason && (web.available || (web.envKey && stored[web.envKey]))) {
         setCaps((prev) => ['web_search', ...prev]);
       }
       const list = await store.list();

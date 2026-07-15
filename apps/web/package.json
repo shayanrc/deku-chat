@@ -1,0 +1,34 @@
+{
+  "name": "@deku/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@deku/core": "*",
+    "@deku/ui": "*",
+    "@langchain/anthropic": "^0.3.26",
+    "@langchain/core": "^0.3.66",
+    "@langchain/deepseek": "^0.1.0",
+    "@langchain/google-genai": "^0.2.16",
+    "@langchain/langgraph": "^0.3.11",
+    "@langchain/mistralai": "^0.2.3",
+    "@langchain/openai": "^0.5.18",
+    "@langchain/xai": "^0.1.0",
+    "idb-keyval": "^6.2.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.20",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.4.1",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  }
+}

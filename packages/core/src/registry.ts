@@ -54,7 +54,7 @@ export const PROVIDERS: ProviderDef[] = [
     id: 'mistral',
     name: 'Mistral',
     envKey: 'MISTRAL_API_KEY',
-    browserCompatible: false, // CORS unverified — flip after empirical check
+    browserCompatible: true, // CORS verified open (2026-07)
     models: [
       { id: 'mistral-large-latest', name: 'Mistral Large', contextWindow: 131_072 },
       { id: 'mistral-medium-latest', name: 'Mistral Medium', contextWindow: 131_072 },
@@ -75,7 +75,7 @@ export const PROVIDERS: ProviderDef[] = [
     id: 'cohere',
     name: 'Cohere',
     envKey: 'COHERE_API_KEY',
-    browserCompatible: false, // CORS unverified — flip after empirical check
+    browserCompatible: false, // API is CORS-open, but the cohere SDK drags Node-only AWS deps into browser bundles
     models: [
       { id: 'command-a-03-2025', name: 'Command A', contextWindow: 262_144 },
       { id: 'command-r-plus', name: 'Command R+', contextWindow: 131_072 },
@@ -85,7 +85,7 @@ export const PROVIDERS: ProviderDef[] = [
     id: 'xai',
     name: 'xAI',
     envKey: 'XAI_API_KEY',
-    browserCompatible: true, // OpenAI-compatible; verify empirically
+    browserCompatible: true, // CORS verified open (2026-07)
     models: [
       { id: 'grok-4', name: 'Grok 4', contextWindow: 262_144 },
       { id: 'grok-3', name: 'Grok 3', contextWindow: 131_072 },
@@ -96,7 +96,7 @@ export const PROVIDERS: ProviderDef[] = [
     id: 'deepseek',
     name: 'DeepSeek',
     envKey: 'DEEPSEEK_API_KEY',
-    browserCompatible: false, // api.deepseek.com widely reported to lack CORS headers
+    browserCompatible: true, // CORS verified open (2026-07)
     models: [{ id: 'deepseek-chat', name: 'DeepSeek Chat', contextWindow: 131_072 }],
   },
 ];
@@ -111,7 +111,7 @@ export interface CapabilityDef {
 }
 
 export const CAPABILITIES: CapabilityDef[] = [
-  { id: 'web_search', name: 'Web search', kind: 'web', envKey: 'TAVILY_API_KEY', tokens: 400, browserCompatible: false }, // Tavily CORS unverified
+  { id: 'web_search', name: 'Web search', kind: 'web', envKey: 'TAVILY_API_KEY', tokens: 400, browserCompatible: false }, // api.tavily.com CORS verified BLOCKED (2026-07)
   { id: 'calculator', name: 'Calculator', kind: 'code', envKey: null, tokens: 250, browserCompatible: true },
   { id: 'clock', name: 'Clock', kind: 'tool', envKey: null, tokens: 150, browserCompatible: true },
 ];
