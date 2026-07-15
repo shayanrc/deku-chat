@@ -10,7 +10,7 @@ for (const theme of ['light', 'dark']) {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
   await ctx.addInitScript((t) => localStorage.setItem('deku-theme', t), theme);
   const page = await ctx.newPage();
-  await page.goto('http://localhost:5173', { waitUntil: 'networkidle' });
+  await page.goto(process.env.DEKU_APP_URL ?? 'http://localhost:5173', { waitUntil: 'networkidle' });
   await page.waitForSelector('.msg-assistant', { timeout: 15000 });
   // open the tool-use disclosure so "Show the work" content is visible
   await page.locator('.work summary').first().click().catch(() => {});

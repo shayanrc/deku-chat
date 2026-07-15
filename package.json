@@ -9,12 +9,15 @@
     "apps/fullstack/frontend"
   ],
   "scripts": {
-    "dev": "concurrently -n server,web -c blue,magenta \"npm run dev:server\" \"npm run dev:web\"",
-    "dev:server": "tsx watch server/index.ts",
-    "dev:web": "npm run dev -w apps/fullstack/frontend",
+    "dev": "npm run dev:fullstack",
+    "dev:fullstack": "concurrently -n api,web -c blue,magenta \"npm run dev:api\" \"npm run dev -w apps/fullstack/frontend\"",
+    "dev:api": "uv --directory apps/fullstack/backend run uvicorn deku_server.main:app --reload --port 5175",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:legacy": "concurrently -n server,web -c blue,magenta \"tsx watch server/index.ts\" \"npm run dev -w apps/fullstack/frontend\"",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present && tsc --noEmit -p tsconfig.json",
-    "test": "npm run test -w packages/core"
+    "test": "npm run test -w packages/core && uv --directory apps/fullstack/backend run pytest -q",
+    "lint:py": "uv --directory apps/fullstack/backend run ruff check ."
   },
   "dependencies": {
     "@langchain/anthropic": "^0.3.26",

@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': 'http://localhost:5175',
+      '/api': process.env.DEKU_API_URL ?? 'http://localhost:5175',
     },
   },
 });

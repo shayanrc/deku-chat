@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const APP = 'http://localhost:5173';
+const APP = process.env.DEKU_APP_URL ?? 'http://localhost:5173';
 const VID_DIR = '/tmp/deku-vids';
 fs.mkdirSync('docs', { recursive: true });
 fs.mkdirSync(VID_DIR, { recursive: true });

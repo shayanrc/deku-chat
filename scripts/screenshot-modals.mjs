@@ -8,7 +8,7 @@ const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
 await ctx.addInitScript(() => localStorage.setItem('deku-theme', 'light'));
 const page = await ctx.newPage();
-await page.goto('http://localhost:5173', { waitUntil: 'networkidle' });
+await page.goto(process.env.DEKU_APP_URL ?? 'http://localhost:5173', { waitUntil: 'networkidle' });
 await page.waitForSelector('.msg-assistant');
 
 async function shot(name, open) {
