@@ -1,94 +1,104 @@
 # Deku — agent instructions
 
-Agentic LLM chat webapp with git-like branching conversations, implemented from a Claude Design
-handoff. GitHub: `shayanrc/deku-chat` (public, branch `master`).
+Agentic LLM chat with git-like branching conversations, implemented from a Claude Design
+handoff. GitHub: `shayanrc/deku-chat` (public, branch `master`). **Monorepo producing two
+deployables that share one UI**:
+
+- `apps/web` — standalone static SPA, no backend: LangGraph **JS runs in the browser**,
+  IndexedDB persistence, deployed to GitHub Pages (https://shayanrc.github.io/deku-chat/)
+  by `.github/workflows/deploy-pages.yml` on every push to master.
+- `apps/fullstack` — the same UI + **Python** backend (FastAPI + LangGraph Python), HTTP/NDJSON
+  contract identical to the original Express server (which lives only in git history now).
+
+## Layout
+
+- `packages/core` (`@deku/core`) — zero-dep isomorphic TS: `types.ts`, `ops.ts` (pure branching
+  operations), `registry.ts` (providers/capabilities + `browserCompatible` flags + prompt
+  strings), `seed.ts`/`seed.json` (demo data; timestamps are negative offsets from now,
+  `{"$ref": "<branchId>"}` splices a prior branch's messages). Tested by
+  `test/ops.test.ts` against **JSON fixtures in `fixtures/ops/`** — the same fixtures drive the
+  Python `tests/test_ops.py`, keeping both languages' ops provably identical. If you change an
+  op, change it in BOTH `packages/core/src/ops.ts` AND
+  `apps/fullstack/backend/deku_server/ops.py`, and update the fixtures.
+- `packages/ui` (`@deku/ui`) — the entire React app, backend-agnostic. Apps inject a
+  `Backend` (`{store: ConversationStore, transport: ChatTransport}`, see `src/backend.ts`)
+  into `<App backend={...}>`; the backend object must be a stable module-scope reference.
+  The `chat()` side-effect contract is documented on the interface — both transports MUST
+  honor it (user-msg persistence, partial + `*(generation interrupted)*` on abort/error,
+  `(no response)`, title truncation at 48 + `…`, AbortError on abort, never an error event).
+- `apps/web/src` — `store/idb.ts` (idb-keyval), `agent/` (browser port of the agent:
+  `models.ts` lazy per-provider dynamic imports with `dangerouslyAllowBrowser` flags; Groq goes
+  through ChatOpenAI + baseURL; **Cohere is excluded** — its SDK drags Node-only AWS code into
+  the bundle). Web `meta()` is built locally from the registry; `browserCompatible: false`
+  entries get `unavailableReason` and render disabled.
+- `apps/fullstack/frontend` — thin shell (`http.ts` = REST implementations of the interfaces).
+- `apps/fullstack/backend` — uv project (`uv sync`, `uv run pytest`, `uv run ruff check .`).
+  Wire parity rules live in `deku_server/models.py` (`dump()`): camelCase aliases, keep
+  `forkOf: null`, omit absent optionals, epoch **milliseconds**, `ensure_ascii=False` NDJSON.
+  Client disconnect = `asyncio.CancelledError` in the chat generator: persist partial,
+  re-raise, no error event. Single-worker uvicorn only (in-memory db cache).
 
 ## Design source of truth
 
-`design-handoff/advanced-llm-chat-interface-design/project/Agentic Chat.dc.html` is the primary
-design (plus `Agentic Chat Directions.dc.html` for light/dark statics). Match it when touching UI.
-`src/styles/theme.css` is a **verbatim copy** of the design system's two CSS scopes —
-`scope-industry` (light) and `scope-nocturne` (dark) — applied at the app root; don't edit it,
-put app styles in `src/styles/app.css` using the theme's CSS variables (`--color-accent`,
-`--space-*`, `--radius-*`, …).
-
-## Architecture
-
-- `src/` — React 18 + Vite + TS frontend. All app state lives in one context provider,
-  `src/state.tsx` (`useApp()`); components under `src/components/` (modals in
-  `components/modals/`). API layer: `src/api.ts`. Markdown: `react-markdown` + `remark-gfm`
-  via `src/markdown.tsx`.
-- `server/` — Express + **LangGraph JS** (`createReactAgent` from `@langchain/langgraph/prebuilt`).
-  `index.ts` routes, `agent.ts` model construction + streaming, `tools.ts` tool registry,
-  `config.ts` providers/models/system prompt, `store.ts` JSON persistence
-  (`server/data/db.json`, gitignored).
-- `shared/types.ts` — types + token estimator used by both sides.
-- Streaming: NDJSON over fetch (`user` / `delta` / `tool` / `done` / `error` events);
-  client aborts propagate via `res.on('close')` → AbortSignal into LangGraph; partial answers
-  are persisted with an "*(generation interrupted)*" suffix.
+`design-handoff/advanced-llm-chat-interface-design/project/Agentic Chat.dc.html` (+
+`...Directions.dc.html`). Match it when touching UI. `packages/ui/src/styles/theme.css` is a
+**verbatim copy** of the design CSS scopes — never edit it; app styles go in `app.css` using
+the theme variables.
 
 ## Branching model (core invariant)
 
-Every branch stores its **full message list** (copy-on-branch) plus
-`forkOf: {branchId, messageId}` marking where it diverged. Operations:
-**Branch** = full copy + switch (`forkBranch` with `messageId: null` means "full copy", and
-sets `forkOf.messageId` to the tip); **Rewind** = prefix copy up to the picked message into a
-new `Rewind N` branch (original keeps the tail); **Combine** = source is always the **active**
-branch, target is picked in the modal/drop: append source's messages the target lacks (by id),
-re-point source's children to the target, delete source; **Summarize** = replace a message
-range with a `kind:'summary'` node keeping originals in `summaryOf` (drives "Show original" +
-freed-token accounting). The "Branched here → …" divider intentionally shows on every branch
-sharing the fork-point message (matches the design's child-branch view).
+Every branch stores its **full message list** plus `forkOf: {branchId, messageId}`.
+Branch = full copy (`messageId: null`, forkOf.messageId = tip); Rewind = prefix copy to a new
+`Rewind N` branch (original keeps the tail); Combine = **active branch is always the source**:
+append missing-by-id onto the target, re-point children, delete source; Summarize = splice a
+`summary` node keeping originals in `summaryOf`. The "Branched here" divider appears on every
+branch sharing the fork-point message (intentional; matches the design).
 
 ## API keys (user-mandated design)
 
-Keys live in **browser localStorage only** (`deku-api-keys`), managed via avatar → "API keys…"
-(left- or right-click), and are sent per-request in the `apiKeys` body field. Server precedence:
-`apiKeys[envKey] || process.env[envKey]` (browser wins; `.env` optional fallback — the app must
-work with no `.env` at all). Never persist keys server-side; don't reintroduce copy in the UI
-about `.env` override (user had it removed).
+Browser localStorage only (`deku-api-keys`), managed via the avatar menu, sent per-request as
+`apiKeys`. Precedence `apiKeys[envKey] || env` (fullstack; the web edition has no env at all).
+Never persist keys server-side; no ".env override" copy in the UI.
 
-Providers (8): Anthropic, OpenAI, Google, Mistral, Groq, Cohere, xAI, DeepSeek. To add one:
-entry in `server/config.ts` PROVIDERS (id/name/envKey/models+contextWindow) + case in
-`server/agent.ts` buildModel() — the frontend (provider menu, keys modal) is data-driven off
-`/api/meta`, no client change needed. **`@langchain/*` provider packages must peer-depend on
-`@langchain/core` 0.3.x** — latest majors need core 1.x and break the install. The caret ranges
-in package.json (`^0.2.x` etc.) already enforce this for 0.x packages; when installing a NEW
-provider package, request an explicit 0.3-core-compatible version (e.g.
-`npm i @langchain/mistralai@0.2`), not `latest`.
+Adding a provider: registry entry in `packages/core/src/registry.ts` + loader in
+`apps/web/src/agent/models.ts` + entry in `apps/fullstack/backend/deku_server/config.py`
+(init_chat_model prefix). JS provider packages must peer-depend on **@langchain/core 0.3.x**
+(install explicit versions, e.g. `@langchain/mistralai@0.2`, never `latest`); Python is on
+langchain-core 1.x and has no such trap.
 
 ## Dev workflow
 
 ```bash
-npm run dev        # Express :5175 (tsx watch) + Vite :5173 (proxies /api)
-npm run typecheck  # tsc -b — run after changes; no test suite exists
-npm run build      # tsc + vite build → dist/; npm start serves it on :5175
+npm run dev        # fullstack: uvicorn :5175 (--reload) + vite :5173
+npm run dev:web    # standalone SPA on :5174
+npm run typecheck  # all JS workspaces
+npm run test       # vitest ops + pytest (backend)
+npm run lint:py
 ```
 
-Gotchas: `pkill -f "tsx server/index.ts"` also kills the dev server's watcher — check what's
-running first. Touching `server/index.ts` restarts the API and re-reads `db.json` (needed after
-editing the db by hand, since the store caches in memory).
+Gotchas: `pkill -f` patterns that appear in your own command line kill your shell — kill by
+port (`fuser -k 5176/tcp`) instead. The backend caches `db.json` in memory: after hand-editing
+it, `touch apps/fullstack/backend/deku_server/main.py` (uvicorn --reload re-imports → re-reads).
+`DEKU_DATA_DIR` overrides the backend's data dir; `DEKU_API_URL` overrides the frontend proxy.
 
 ## README media
 
-All README images are generated — never hand-edit them. Run with `node scripts/<name>.mjs`
-from the repo root; prerequisites: dev server running, Playwright's Chromium
-(`npx playwright install chromium`, ~160 MB, already installed on this machine), and `ffmpeg`
-on PATH (system package):
-- `scripts/screenshot.mjs` → hero light/dark shots
-- `scripts/screenshot-modals.mjs` → per-modal stills (not currently in README)
-- `scripts/record-gifs.mjs` → the five feature GIFs (re-seeds demo data per scenario,
-  synthetic cursor, ffmpeg palette conversion)
+All README images are generated — never hand-edit. Prereqs: dev server running, Playwright
+Chromium (`npx playwright install chromium`), system `ffmpeg`. `DEKU_APP_URL` points scripts at
+a non-default app URL.
+- `node scripts/screenshot.mjs` → hero shots · `scripts/screenshot-modals.mjs` → modal stills
+- `node scripts/record-gifs.mjs` → feature GIFs (re-seeds `db.json` from core's seed.json per
+  scenario; expects the fullstack dev stack)
+- `node scripts/web-smoke.mjs` → apps/web gate: boot/persist/agent-in-browser + CORS probe
+  matrix (re-run it before changing any `browserCompatible` flag)
 
-They need `npm run dev` running and expect the demo seed (the "Q3 campaign messaging"
-conversation with Main/Playful tone/Formal tone branches) — `record-gifs.mjs` seeds it itself;
-its `seedDb()` is the canonical seed if you need it standalone. **Always visually inspect
-captured media (Read the png / extract gif frames with ffmpeg) before committing** — the user
-expects screenshots to be verified, and stray branches from live testing often pollute the db.
+**Always visually inspect captured media (Read the png / extract gif frames) before
+committing.** Byte-identical re-captures = no visual change (rendering is deterministic) —
+this doubles as a UI regression check.
 
 ## Working agreements
 
-- Rendering is deterministic: re-captured screenshots that are byte-identical mean no change.
-- The composer capability menu is intentionally a flat list (design's Tools/Skills/MCP/Files
-  IA deferred); `ToolEvent.kind` already supports `mcp`/`skill` for later.
-- Commits so far are conventional prose messages on `master`, pushed straight to origin.
+- Verification gates over vibes: typecheck + vitest + pytest after changes; screenshots for UI.
+- The composer capability menu is intentionally a flat list; `ToolEvent.kind` already carries
+  `mcp`/`skill` for later.
+- Commits: prose messages on `master`, pushed straight to origin.

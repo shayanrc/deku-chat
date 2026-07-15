@@ -15,10 +15,24 @@
 
 </details>
 
-A standalone webapp implementing the `Agentic Chat.dc.html` design from the Claude Design handoff
+An agentic chat app implementing the `Agentic Chat.dc.html` design from the Claude Design handoff
 (`design-handoff/`). Conversations are trees: you can **branch** to explore directions, **rewind**
 to any earlier message (the later messages stay safe on the old branch), **combine** one branch
 onto another, and **summarize** message ranges to reclaim context.
+
+## Two editions, one UI
+
+| | [`apps/web`](apps/web) — standalone | [`apps/fullstack`](apps/fullstack) — Python backend |
+| --- | --- | --- |
+| Runs as | a **static page**, no backend — [**live demo**](https://shayanrc.github.io/deku-chat/) | FastAPI + LangGraph (Python) |
+| Agent | LangGraph **JS in the browser** | `create_react_agent` on the server |
+| Storage | IndexedDB in your browser | `db.json` on the server |
+| Providers | 7 (Cohere & Tavily need the backend) | all 8 + web search |
+
+Both are thin shells around the same shared packages: **`packages/ui`** (the entire React app,
+backend-agnostic behind `ConversationStore`/`ChatTransport` interfaces) and **`packages/core`**
+(types, the branching operations, provider registry, demo seed — with JSON fixtures keeping the
+TypeScript and Python implementations of the ops provably in lockstep).
 
 ## Features
 
@@ -69,18 +83,46 @@ them. Saved keys show masked with a "browser" source tag.
 
 ## Stack
 
-- **Frontend** — React 18 + Vite + TypeScript. Themes are the design system's `scope-industry`
-  (light) and `scope-nocturne` (dark) scopes, copied verbatim into `src/styles/theme.css`.
-- **Backend** — Node + Express (`server/`). The LLM side is a **LangGraph JS** ReAct agent
-  (`createReactAgent`) with pluggable providers: Anthropic, OpenAI, Google Gemini, Mistral,
-  Groq, Cohere, xAI, and DeepSeek.
-- **Tools** — calculator and clock (always available), web search via Tavily (optional key).
-  Tool calls stream into the "Show the work" disclosure on each assistant message.
-  (The design's "Tools / Skills / Connectors (MCP) / Files" composer menu is intentionally
-  simplified to a flat capability list until skills/MCP/files land; the tool-event model
-  already carries `mcp`/`skill` kinds for when they do.)
-- **Persistence** — JSON file at `server/data/db.json` (created on first write).
-- **Streaming** — NDJSON over a fetch stream (`delta` / `tool` / `done` / `error` events).
+- **`packages/ui`** — React 18 + TS, the design system's `scope-industry` (light) and
+  `scope-nocturne` (dark) scopes copied verbatim into `src/styles/theme.css`.
+- **`packages/core`** — zero-dependency isomorphic TS: types, branching ops, registry, seed.
+- **`apps/web`** — Vite SPA; LangGraph JS `createReactAgent` in-browser, lazy per-provider
+  chunks, `idb-keyval` persistence. Deployed to GitHub Pages by CI.
+- **`apps/fullstack`** — Vite frontend + FastAPI backend (uv, ruff, pytest, pydantic v2),
+  LangGraph Python, NDJSON streaming with abort + partial-answer persistence.
+- **Tools** — calculator and clock (always available), web search via Tavily (fullstack only).
+
+## Setup
+
+```bash
+npm install            # JS workspaces
+npm run dev            # fullstack edition: FastAPI :5175 + web :5173 (needs uv)
+npm run dev:web        # standalone edition: :5174 (no backend, no Python needed)
+npm run test           # vitest (core ops) + pytest (backend, incl. fixture parity)
+npm run typecheck      # all workspaces
+```
+
+Then add a provider key in the app (click the avatar → **API keys…**).
+
+## API keys
+
+![API keys](docs/gif-keys.gif)
+
+Click (or right-click) the avatar → **API keys…**. One row per supported provider — Anthropic,
+OpenAI, Google, Mistral, Groq, Cohere, xAI, DeepSeek — plus tool keys like Tavily web search.
+Keys live in your browser's localStorage only and are sent per-request; the server never stores
+them. Saved keys show masked with a "browser" source tag.
+
+## Stack
+
+- **`packages/ui`** — React 18 + TS, the design system's `scope-industry` (light) and
+  `scope-nocturne` (dark) scopes copied verbatim into `src/styles/theme.css`.
+- **`packages/core`** — zero-dependency isomorphic TS: types, branching ops, registry, seed.
+- **`apps/web`** — Vite SPA; LangGraph JS `createReactAgent` in-browser, lazy per-provider
+  chunks, `idb-keyval` persistence. Deployed to GitHub Pages by CI.
+- **`apps/fullstack`** — Vite frontend + FastAPI backend (uv, ruff, pytest, pydantic v2),
+  LangGraph Python, NDJSON streaming with abort + partial-answer persistence.
+- **Tools** — calculator and clock (always available), web search via Tavily (fullstack only).
 
 ## Setup
 

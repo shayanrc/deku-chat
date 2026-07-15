@@ -1,5 +1,6 @@
-// Records feature walkthrough GIFs for the README from the running dev server.
-// Each scenario re-seeds the demo data (restarting the API via tsx watch), records
+// Records feature walkthrough GIFs for the README from the running dev server
+// (npm run dev — FastAPI on :5175 + web on :5173).
+// Each scenario re-seeds the demo data (uvicorn --reload picks it up), records
 // a Playwright video with a synthetic cursor, and converts it to docs/gif-<name>.gif.
 // Usage: node scripts/record-gifs.mjs
 import { chromium } from 'playwright';
@@ -12,57 +13,44 @@ const VID_DIR = '/tmp/deku-vids';
 fs.mkdirSync('docs', { recursive: true });
 fs.mkdirSync(VID_DIR, { recursive: true });
 
-// ── demo seed (same content as the README screenshots) ──
+// ── demo seed: materialized from @deku/core's seed.json (offsets from now, $ref
+// entries splice in the referenced branch's messages) ──
+const DB_PATH = process.env.DEKU_DB_PATH ?? 'apps/fullstack/backend/data/db.json';
+const API_TOUCH = 'apps/fullstack/backend/deku_server/main.py';
+const SEED = JSON.parse(fs.readFileSync('packages/core/src/seed.json', 'utf8'));
+
+function materializeMsg(m, now) {
+  const out = { ...m, createdAt: now + m.createdAt };
+  if (m.summaryOf) out.summaryOf = m.summaryOf.map((o) => materializeMsg(o, now));
+  return out;
+}
+
 function seedDb() {
   const now = Date.now();
-  const msg = (i, role, content, extra = {}) => ({
-    id: `m${i}`, role, kind: 'message', content, createdAt: now - (20 - i) * 60000, ...extra,
+  const conversations = SEED.conversations.map((conv) => {
+    const built = [];
+    for (const b of conv.branches) {
+      const messages = [];
+      for (const entry of b.messages) {
+        if (entry.$ref) {
+          const src = built.find((x) => x.id === entry.$ref);
+          messages.push(...src.messages.map((m) => ({ ...m })));
+        } else {
+          messages.push(materializeMsg(entry, now));
+        }
+      }
+      built.push({ ...b, messages, createdAt: now + b.createdAt });
+    }
+    return { ...conv, branches: built, createdAt: now + conv.createdAt, updatedAt: now + conv.updatedAt };
   });
-  const m1 = msg(1, 'user', 'Help me name a new sparkling water brand.');
-  const m2 = msg(2, 'assistant', 'Ten to start: Current, Tide, Fizz, Rise, Halo, Drift, Ripple, Clear, Loft, Verve.');
-  const m3 = msg(3, 'user', 'I like Current and Tide. Compare them.');
-  const m4 = msg(4, 'assistant', '“Current” feels modern and energetic; “Tide” is calmer and more natural.');
-  const m5 = msg(5, 'user', 'Go with Current. Draft a few taglines.');
-  const m6 = msg(6, 'assistant', 'Three to start: “Stay Current.” · “The future, bottled.” · “Fresh thinking, in every sip.”');
-  const summary = {
-    id: 's1', role: 'assistant', kind: 'summary',
-    content: 'Brainstormed names → shortlisted “Current”.',
-    summaryOf: [m1, m2, m3], freedTokens: 6000, createdAt: m3.createdAt,
-  };
-  const m7 = msg(7, 'user', 'Love “Current.” Make the taglines punchier and a bit more playful.');
-  const m8 = msg(8, 'assistant',
-    'On it — punchier and more playful, all built around **Current**:\n\n- “Go with the Current.”\n- “Catch your Current.”\n- “Stay Current. Stay hydrated.”',
-    { toolEvents: [
-      { kind: 'web', label: 'Web search', detail: 'Searched “playful beverage taglines”' },
-      { kind: 'mcp', label: 'Notion', detail: 'Notion — read “Brand voice” doc' },
-      { kind: 'skill', label: 'Playful Copywriting', detail: 'Playful Copywriting' },
-    ] });
-  const mainMsgs = [summary, m4, m5, m6];
-  const simple = (cid, title, q, a, age) => ({
-    id: cid, title,
-    branches: [{ id: `${cid}-main`, name: 'Main', forkOf: null, messages: [msg(1, 'user', q), msg(2, 'assistant', a)], createdAt: now - age }],
-    activeBranchId: `${cid}-main`, createdAt: now - age, updatedAt: now - age,
-  });
-  const db = { conversations: [
-    {
-      id: 'conv-q3', title: 'Q3 campaign messaging',
-      branches: [
-        { id: 'br-main', name: 'Main', forkOf: null, messages: mainMsgs, createdAt: now - 1200000 },
-        { id: 'br-playful', name: 'Playful tone', forkOf: { branchId: 'br-main', messageId: 'm6' }, messages: [...mainMsgs, m7, m8], createdAt: now - 600000 },
-        { id: 'br-formal', name: 'Formal tone', forkOf: { branchId: 'br-main', messageId: 'm6' }, messages: [...mainMsgs], createdAt: now - 500000 },
-      ],
-      activeBranchId: 'br-playful', createdAt: now - 1200000, updatedAt: now,
-    },
-    simple('conv-onb', 'Onboarding email flow', 'Draft a 3-step onboarding email flow.', 'Here is a draft…', 86400000),
-    simple('conv-comp', 'Competitor teardown', 'Tear down our top competitor’s pricing page.', 'Key observations…', 172800000),
-  ] };
-  fs.writeFileSync('server/data/db.json', JSON.stringify(db, null, 2));
+  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+  fs.writeFileSync(DB_PATH, JSON.stringify({ conversations }, null, 2));
 }
 
 async function resetServer() {
   seedDb();
   const t = new Date();
-  fs.utimesSync('server/index.ts', t, t); // tsx watch reload → re-reads db.json
+  fs.utimesSync(API_TOUCH, t, t); // uvicorn --reload restarts → store re-reads db.json
   for (let i = 0; i < 40; i++) {
     await new Promise((r) => setTimeout(r, 400));
     try {
@@ -127,7 +115,7 @@ async function record(name, scenario) {
   const webm = await video.path();
   const gif = path.join('docs', `gif-${name}.gif`);
   execFileSync('ffmpeg', ['-y', '-ss', '0.5', '-i', webm,
-    '-vf', 'fps=12,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse=dither=bayer:bayer_scale=3',
+    '-vf', 'fps=10,scale=880:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96[p];[b][p]paletteuse=dither=bayer:bayer_scale=4',
     '-loop', '0', gif], { stdio: 'pipe' });
   console.log(`captured ${gif} (${Math.round(fs.statSync(gif).size / 1024)} kB)`);
 }
