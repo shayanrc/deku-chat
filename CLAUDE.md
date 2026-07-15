@@ -1,89 +1,94 @@
-# CLAUDE.md
+# Deku — agent instructions
 
-Deku — an agentic LLM chat webapp where conversations are **trees**: branch, rewind,
-combine, and summarize. Single-user, local-first. Implemented from the Claude Design
-handoff in `design-handoff/` — **that folder is the visual spec** (read the HTML/CSS
-directly; don't render it). A full design-fidelity review has been completed and all
-findings fixed; match its look when adding UI.
+Agentic LLM chat webapp with git-like branching conversations, implemented from a Claude Design
+handoff. GitHub: `shayanrc/deku-chat` (public, branch `master`).
 
-## Commands
+## Design source of truth
 
-```bash
-npm run dev          # tsx watch server (:5175) + vite (:5173, proxies /api)
-npm run build        # tsc -b && vite build → dist/
-npm start            # production: serves dist/ from the Express server
-npm run typecheck    # tsc -b
-node scripts/screenshot.mjs        # regen README hero shots (dev server must be running)
-node scripts/screenshot-modals.mjs # regen per-modal stills (not in README currently)
-node scripts/record-gifs.mjs       # regen README feature GIFs (re-seeds db per scenario)
-```
-
-There are no tests; verification is `typecheck`, `build`, and curling the API.
+`design-handoff/advanced-llm-chat-interface-design/project/Agentic Chat.dc.html` is the primary
+design (plus `Agentic Chat Directions.dc.html` for light/dark statics). Match it when touching UI.
+`src/styles/theme.css` is a **verbatim copy** of the design system's two CSS scopes —
+`scope-industry` (light) and `scope-nocturne` (dark) — applied at the app root; don't edit it,
+put app styles in `src/styles/app.css` using the theme's CSS variables (`--color-accent`,
+`--space-*`, `--radius-*`, …).
 
 ## Architecture
 
-- `shared/types.ts` — single source of truth for `Msg`, `Branch`, `Conversation`,
-  `ChatEvent`, `Meta`, plus the token estimator (~4 chars/token) used by both sides.
-- `server/` — Express + LangGraph JS:
-  - `config.ts` — `PROVIDERS` (8: anthropic, openai, google, mistral, groq, cohere,
-    xai, deepseek → models + context windows + env key), `SYSTEM_PROMPT`, capabilities.
-  - `agent.ts` — `buildModel()` (per-provider constructor switch), `runAgent()`
-    (`createReactAgent` + `streamEvents` v2 → `delta`/`tool` events), `summarizeMessages()`.
-  - `tools.ts` — calculator, clock, Tavily web search (key-gated factory).
-  - `store.ts` — JSON persistence at `server/data/db.json` (gitignored), branch forking.
-  - `index.ts` — REST + NDJSON chat streaming route.
-- `src/` — React 18 + Vite:
-  - `state.tsx` — **the** central store (`AppProvider` / `useApp()`): all state, all
-    actions, toasts, modal routing. Components stay thin.
-  - `styles/theme.css` — copied **verbatim** from the design system
-    (`scope-industry` = light, `scope-nocturne` = dark, class set on the `.app` root).
-    Don't edit it; put app styles in `styles/app.css`.
-  - `components/` + `components/modals/` — one file per surface. `markdown.tsx` wraps
-    react-markdown + remark-gfm.
+- `src/` — React 18 + Vite + TS frontend. All app state lives in one context provider,
+  `src/state.tsx` (`useApp()`); components under `src/components/` (modals in
+  `components/modals/`). API layer: `src/api.ts`. Markdown: `react-markdown` + `remark-gfm`
+  via `src/markdown.tsx`.
+- `server/` — Express + **LangGraph JS** (`createReactAgent` from `@langchain/langgraph/prebuilt`).
+  `index.ts` routes, `agent.ts` model construction + streaming, `tools.ts` tool registry,
+  `config.ts` providers/models/system prompt, `store.ts` JSON persistence
+  (`server/data/db.json`, gitignored).
+- `shared/types.ts` — types + token estimator used by both sides.
+- Streaming: NDJSON over fetch (`user` / `delta` / `tool` / `done` / `error` events);
+  client aborts propagate via `res.on('close')` → AbortSignal into LangGraph; partial answers
+  are persisted with an "*(generation interrupted)*" suffix.
 
-## Core invariants
+## Branching model (core invariant)
 
-- **Branch model is copy-on-branch**: every branch holds its *full* message list plus
-  `forkOf: {branchId, messageId}`. Rewind = copy prefix into a new `Rewind N` branch
-  and switch (originals untouched). Combine = append source messages the target lacks
-  (dedupe by message id), re-point source's children, delete source. Summarize =
-  replace range with one `kind: 'summary'` node keeping originals in `summaryOf`.
-  Fork dividers ("Branched here → …") intentionally render on every branch sharing
-  the fork-point message — the design's own transcript is a child branch showing it.
-- **API keys live in the browser** (`localStorage['deku-api-keys']`), are sent with
-  each chat/summarize request as `apiKeys`, and are never persisted server-side.
-  Precedence: browser key > server `.env` (which is optional). Resolved keys are
-  passed explicitly to provider constructors — never rely on LangChain env fallback.
-  Managed via avatar (top right) click/right-click → "API keys…".
-- **Streaming** is NDJSON over POST (`user`/`delta`/`tool`/`done`/`error` events).
-  The client `Streaming` state carries `convId`/`branchId` — only render/apply a
-  stream where it belongs (user may navigate mid-stream). Stop = client
-  `AbortController`; server aborts the LangGraph run on `res` close and persists any
-  partial answer with an "*(generation interrupted)*" suffix. Same on provider error.
-- **Errors**: `flashToast(msg, 'error')`. Branch actions catch, toast via
-  `reportFailure`, and **rethrow** so modals can reset their animation state instead
-  of closing. Modals gate close during animations (`closeDisabled`), have Escape +
-  focus trap via `Modal.tsx` — keep that when adding modals.
+Every branch stores its **full message list** (copy-on-branch) plus
+`forkOf: {branchId, messageId}` marking where it diverged. Operations:
+**Branch** = full copy + switch (`forkBranch` with `messageId: null` means "full copy", and
+sets `forkOf.messageId` to the tip); **Rewind** = prefix copy up to the picked message into a
+new `Rewind N` branch (original keeps the tail); **Combine** = source is always the **active**
+branch, target is picked in the modal/drop: append source's messages the target lacks (by id),
+re-point source's children to the target, delete source; **Summarize** = replace a message
+range with a `kind:'summary'` node keeping originals in `summaryOf` (drives "Show original" +
+freed-token accounting). The "Branched here → …" divider intentionally shows on every branch
+sharing the fork-point message (matches the design's child-branch view).
 
-## Extending
+## API keys (user-mandated design)
 
-- **New provider**: add to `PROVIDERS` in `server/config.ts`, add a case in
-  `buildModel()` (`server/agent.ts`), update `.env.example` + README. The keys modal
-  and provider menu pick it up from `/api/meta` automatically. ⚠️ Provider packages
-  must peer-match `@langchain/core` **0.3.x** — latest `@langchain/*` majors need
-  core 1.x, so pin (e.g. `@langchain/mistralai@0.2`).
-- **New tool/capability**: factory in `server/tools.ts` + entry in `capabilityInfos()`
-  (`config.ts`) with a token-cost estimate and `envKey` if key-gated. The composer's
-  flat "Add" menu is an intentional simplification of the design's
-  Tools/Skills/MCP/Files categories; `ToolEvent.kind` already supports `mcp`/`skill`.
+Keys live in **browser localStorage only** (`deku-api-keys`), managed via avatar → "API keys…"
+(left- or right-click), and are sent per-request in the `apiKeys` body field. Server precedence:
+`apiKeys[envKey] || process.env[envKey]` (browser wins; `.env` optional fallback — the app must
+work with no `.env` at all). Never persist keys server-side; don't reintroduce copy in the UI
+about `.env` override (user had it removed).
 
-## Gotchas
+Providers (8): Anthropic, OpenAI, Google, Mistral, Groq, Cohere, xAI, DeepSeek. To add one:
+entry in `server/config.ts` PROVIDERS (id/name/envKey/models+contextWindow) + case in
+`server/agent.ts` buildModel() — the frontend (provider menu, keys modal) is data-driven off
+`/api/meta`, no client change needed. **`@langchain/*` provider packages must peer-depend on
+`@langchain/core` 0.3.x** — latest majors need core 1.x and break the install. The caret ranges
+in package.json (`^0.2.x` etc.) already enforce this for 0.x packages; when installing a NEW
+provider package, request an explicit 0.3-core-compatible version (e.g.
+`npm i @langchain/mistralai@0.2`), not `latest`.
 
-- `tsx watch` restarts the API when server files change — the gif recorder exploits
-  this (`utimesSync` on `server/index.ts`) to reload a re-seeded `db.json`. The demo
-  seed lives in `scripts/record-gifs.mjs` (`seedDb()`); screenshots/GIFs assume it.
-- Don't `pkill -f "tsx server"` while `npm run dev` runs — it kills the dev watcher.
-- Playwright is a devDep; browsers via `npx playwright install chromium`. README
-  images are captured at deviceScaleFactor 2, GIFs converted with ffmpeg palettegen.
-- Known deferred gaps: branches of *inactive* conversations aren't listed in the
-  sidebar (only summaries are loaded); no auth/multi-user; skills/MCP/files pending.
+## Dev workflow
+
+```bash
+npm run dev        # Express :5175 (tsx watch) + Vite :5173 (proxies /api)
+npm run typecheck  # tsc -b — run after changes; no test suite exists
+npm run build      # tsc + vite build → dist/; npm start serves it on :5175
+```
+
+Gotchas: `pkill -f "tsx server/index.ts"` also kills the dev server's watcher — check what's
+running first. Touching `server/index.ts` restarts the API and re-reads `db.json` (needed after
+editing the db by hand, since the store caches in memory).
+
+## README media
+
+All README images are generated — never hand-edit them. Run with `node scripts/<name>.mjs`
+from the repo root; prerequisites: dev server running, Playwright's Chromium
+(`npx playwright install chromium`, ~160 MB, already installed on this machine), and `ffmpeg`
+on PATH (system package):
+- `scripts/screenshot.mjs` → hero light/dark shots
+- `scripts/screenshot-modals.mjs` → per-modal stills (not currently in README)
+- `scripts/record-gifs.mjs` → the five feature GIFs (re-seeds demo data per scenario,
+  synthetic cursor, ffmpeg palette conversion)
+
+They need `npm run dev` running and expect the demo seed (the "Q3 campaign messaging"
+conversation with Main/Playful tone/Formal tone branches) — `record-gifs.mjs` seeds it itself;
+its `seedDb()` is the canonical seed if you need it standalone. **Always visually inspect
+captured media (Read the png / extract gif frames with ffmpeg) before committing** — the user
+expects screenshots to be verified, and stray branches from live testing often pollute the db.
+
+## Working agreements
+
+- Rendering is deterministic: re-captured screenshots that are byte-identical mean no change.
+- The composer capability menu is intentionally a flat list (design's Tools/Skills/MCP/Files
+  IA deferred); `ToolEvent.kind` already supports `mcp`/`skill` for later.
+- Commits so far are conventional prose messages on `master`, pushed straight to origin.
