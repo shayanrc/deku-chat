@@ -24,14 +24,7 @@ onto another, and **summarize** message ranges to reclaim context.
 
 ### Conversation tree
 
-![Conversation tree modal](docs/modal-tree.png)
-
-<details>
-<summary>▶ Watch it in action</summary>
-
-![tree walkthrough](docs/gif-tree.gif)
-
-</details>
+![Conversation tree](docs/gif-tree.gif)
 
 Every path the chat has taken, laid out as a git-style graph: the solid neutral node is the root,
 hollow rings are branches you can jump to, and the accent node marks where you are. Click a node
@@ -40,14 +33,7 @@ your current branch is drawn in the accent color.
 
 ### Rewind
 
-![Rewind modal](docs/modal-rewind.png)
-
-<details>
-<summary>▶ Watch it in action</summary>
-
-![rewind walkthrough](docs/gif-rewind.gif)
-
-</details>
+![Rewind](docs/gif-rewind.gif)
 
 Pick any earlier message and continue from there on a fresh `Rewind N` branch — the messages
 after that point are never deleted, they stay on the branch you rewound from. The rows below
@@ -56,14 +42,7 @@ shortcut that opens this modal with that message preselected.
 
 ### Combine
 
-![Combine branches modal](docs/modal-combine.png)
-
-<details>
-<summary>▶ Watch it in action</summary>
-
-![combine walkthrough](docs/gif-combine.gif)
-
-</details>
+![Combine branches](docs/gif-combine.gif)
 
 Replays the current branch's messages on top of another branch so two explorations become one
 line — the animation lifts the branch's commits off the fork point and winds them onto the
@@ -72,14 +51,7 @@ Afterwards the source branch is removed and any of its children are re-pointed a
 
 ### Summarize
 
-![Summarize modal](docs/modal-summarize.png)
-
-<details>
-<summary>▶ Watch it in action</summary>
-
-![summarize walkthrough](docs/gif-summarize.gif)
-
-</details>
+![Summarize](docs/gif-summarize.gif)
 
 Select a start and end message (or a single message) and the range is compressed into one short
 summary node by the current model. The summary card in the transcript shows what was freed and
@@ -88,14 +60,7 @@ keeps the originals behind a "Show original" toggle — nothing is destroyed. Al
 
 ### API keys
 
-![API keys modal](docs/modal-keys.png)
-
-<details>
-<summary>▶ Watch it in action</summary>
-
-![keys walkthrough](docs/gif-keys.gif)
-
-</details>
+![API keys](docs/gif-keys.gif)
 
 Click (or right-click) the avatar → **API keys…**. One row per supported provider — Anthropic,
 OpenAI, Google, Mistral, Groq, Cohere, xAI, DeepSeek — plus tool keys like Tavily web search.
